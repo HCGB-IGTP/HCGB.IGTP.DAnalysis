@@ -1,0 +1,17 @@
+Package: HCGB.IGTP.DAnalysis
+Title: Useful in-house functions for differential analysis
+Version: 0.0.1
+Authors@R: 
+    person(given = "Jose Francisco",
+           family = "Sanchez-Herrero",
+           role = c("aut", "cre"),
+           email = "jfbioinformatics@gmail.com")
+Description: Package containing useful in-house functions for differential analysis (expression, methylation, microarrays)
+License: use_gpl3_license()
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1.9000
+Depends:
+  DESeq2
+URL: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis
