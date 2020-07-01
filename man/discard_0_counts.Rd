@@ -15,4 +15,3 @@ discard_0_counts(countsF, cutoff = 0.9)
 This functions prepares countsfile for DESeq discarding rows with
 many 0 for all samples. It uses the given cutoff, to discard rows containingcutoff (\%) of 0's. Default cutoff value is 0.9
 }
-\keyword{XICRA}

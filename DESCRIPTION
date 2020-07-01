@@ -13,5 +13,6 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1.9000
 Depends:
-  DESeq2
+  DESeq2,
+  pheatmap
 URL: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis
