@@ -99,7 +99,7 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
 #' @param threads Number of CPUs to use [Default 2].
 #' @export
 DESeq2_HCGB_function = function(dds_object, coef_n, name, 
-                       numerador="example1", denominador="example2", 
+                       numerator="example1", denominator="example2", 
                        OUTPUT_Data_dir, df_treatment_Ind, threads=2) {
   
   ## set name
