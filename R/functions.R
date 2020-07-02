@@ -103,7 +103,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
                        OUTPUT_Data_dir, df_treatment_Ind, threads=2) {
   
   ## set name
-  file_name <- paste0(name, "_", numerador, "_vs_", denominador)
+  file_name <- paste0(name, "_", numerator, "_vs_", denominator)
   
   ## start
   print (paste0("## Starting: ", file_name))
