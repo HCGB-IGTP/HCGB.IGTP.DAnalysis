@@ -132,7 +132,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   ### Plot p-values
   ######################################################################
   ## original/filtered
-  Pvalues_pdf <- file.path(OUTPUT_Data_sample, paste0(name,"_", numerador, "_vs_", denominador," p-value_distribution.pdf"))
+  Pvalues_pdf <- file.path(OUTPUT_Data_sample, paste0(name,"_", numerator, "_vs_", denominator," p-value_distribution.pdf"))
   HCGB.IGTP.DAnalysis::plot_DESeq2_pvalues(Pvalues_pdf, res, res_filtered)
   
   ######################################################################
@@ -170,7 +170,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   ## ma plot
   ######################################################################
   jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-maplot.jpeg")), 1500, 1000, pointsize=20)
-  plot_main_title <- paste0("MA Plot: ", numerador, " vs ", denominador)
+  plot_main_title <- paste0("MA Plot: ", numerator, " vs ", denominator)
   HCGB.IGTP.DAnalysis::maplot(res = alldata, main=plot_main_title)
   dev.off()
   
@@ -178,7 +178,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   ## volcano
   ######################################################################
   jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-volcano-plot.jpeg")), 1500, 1000, pointsize=20)
-  volcano_main_title <- paste0("Volcano Plot: ", numerador, " vs ", denominador)
+  volcano_main_title <- paste0("Volcano Plot: ", numerator, " vs ", denominator)
   HCGB.IGTP.DAnalysis::volcanoplot(res = alldata, main=volcano_main_title ,lfcthresh=round(log2(1.2),2), sigthresh=0.05, textcx=.8)
   dev.off()
   
