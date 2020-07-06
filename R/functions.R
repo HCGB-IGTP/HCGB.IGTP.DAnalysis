@@ -245,28 +245,24 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   select <- select[!is.na(select)] ## discard NA values
   
   ## plot rld
-  try(
-	pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation.pdf")), width=15, height=12)
-	pheatmap(assay(rld)[select,], main="Log Transformation Pheatmap (p.adj<0.05 and [logFC]>1.2)",
+  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation.pdf")), width=15, height=12)
+  try(pheatmap(assay(rld)[select,], main="Log Transformation Pheatmap (p.adj<0.05 and [logFC]>1.2)",
 	   cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
 	   annotation_col = df_treatment_Ind,
 	   color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
 	   scale="row" ## centered and scale values per row
-	)
-	dev.off()
-  )
+  ))
+  dev.off()
   
   ## plot vsd
-  try(
-	pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
-	pheatmap(assay(vsd)[select,], main="Variance Stabilization Pheatmap (p.adj<0.05 and [logFC]>1.2)",
+  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
+  try(pheatmap(assay(vsd)[select,], main="Variance Stabilization Pheatmap (p.adj<0.05 and [logFC]>1.2)",
 	   cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
 	   annotation_col = df_treatment_Ind,
 	   color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
 	   scale="row" ## centered and scale values per row7
-	)
-	dev.off()
-  )
+  ))
+  dev.off()
   
   ######################################################################
   print ("Finish here for: ")
