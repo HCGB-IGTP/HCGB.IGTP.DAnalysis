@@ -85,6 +85,18 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
   dev.off()
 }
 
+#' Discard low counts in dataframe
+#'
+#' This functions discard low counts in a dataframe with any non-numeric column
+#' @param df_given Dataframe to pase
+#' @param min_count Minimum count to use as cutoff [Default: 10].
+#' @export
+discard_lowCounts_df = function(df_given, min_count=10) {
+  df_given <- df_given %>% mutate(total=rowSums(select_if(., is.numeric)))
+  keep <- df_given['total'] >= min_count
+  df_given['total'] <- NULL
+  return(df_given[keep,])
+}
 
 #' Plot DESeq2 p-values
 #'
@@ -271,4 +283,49 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   
   #####
   return(res_filtered)
+}
+
+
+
+#' Plot batch effect
+#'
+#' This functions plots original PCA and batch corrected given two variables and a putative batch variable
+
+#' @param var1 DESeq2 object
+#' @param var2 DESeq2 object
+#' @param dds_object DESeq2 object
+#' @param dirName Folder path to store results
+#' @param batch_var Putative batch variable
+#' @export
+plot_batch_effect <- function(var1, var2, dds_object, dirName, batch_var) {
+  ## remove batch effect?
+  ## http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
+  ## Why after VST are there still batches in the PCA plot?
+  
+  ## Mickael Love:
+  ## DESeq() only takes as input the original counts, and this is on purpose. 
+  ## This is the optimal statistical approach. To account for batch, you put 
+  ## the variables at the beginning of the design, e.g. ~batch + condition 
+  
+  ## plot batch effect
+  vsd_Test <- varianceStabilizingTransformation(dds_object, blind = FALSE)
+  vsd_Test1 <- vsd_Test
+  
+  mat_Test <- assay(vsd_Test)
+  mat_Test <- limma::removeBatchEffect(mat_Test, vsd_Test[[batch_var]])
+  assay(vsd_Test) <- mat_Test
+  
+  p1 <- plotPCA(vsd_Test1, intgroup=var1)
+  p2 <- plotPCA(vsd_Test, intgroup=var1)
+  p3 <- plotPCA(vsd_Test1, intgroup=var2)
+  p4 <- plotPCA(vsd_Test, intgroup=var2)
+  
+  pdf(paste0(dirName, "BatchEffect.pdf"))
+  par(mfrow=c(1,2))
+  print(p1)
+  print(p2)
+  print(p3)
+  print(p4)
+  dev.off()
+  ##
 }
