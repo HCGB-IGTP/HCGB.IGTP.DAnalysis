@@ -219,15 +219,12 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   ## datasets with many true differences due to the experimental conditions.
   
   ntd <- normTransform(dds_object)
-  jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-NormalTransformation-plot.jpeg")), 1500, 1000, pointsize=20)
+  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-Transformation.pdf")))
+  ## Normal transformation  
   meanSdPlot(assay(ntd))
-  dev.off()
-  
-  jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-RegularizedLogTransform-plot.jpeg")), 1500, 1000, pointsize=20)
+  ## RLE transformation
   meanSdPlot(assay(rld))
-  dev.off()
-  
-  jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-VarianceStabilizTransform-plot.jpeg")), 1500, 1000, pointsize=20)
+  ## VarianceStabilization transformation
   meanSdPlot(assay(vsd))
   dev.off()
   
@@ -240,11 +237,11 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   colors <- colorRampPalette( rev(brewer.pal(9, "Reds")) )(255)
   
   pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_SampleDist.pdf")), width=15, height=12)
-  pheatmap(sampleDistMatrix, 
+  try(pheatmap(sampleDistMatrix, 
            clustering_distance_rows=sampleDists, 
            clustering_distance_cols=sampleDists, 
            col=colors, 
-           annotation_row = df_treatment_Ind)
+           annotation_row = df_treatment_Ind))
   dev.off()
   
   ######################################################################
