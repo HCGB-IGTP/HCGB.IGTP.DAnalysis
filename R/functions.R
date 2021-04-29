@@ -229,22 +229,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   dev.off()
   
   ######################################################################
-  ### Pheatmap sample distribution
-  ######################################################################
-  sampleDists <- dist(t(assay(vsd)))
-  sampleDistMatrix <- as.matrix(sampleDists)
-  colnames(sampleDistMatrix) <- NULL
-  colors <- colorRampPalette( rev(brewer.pal(9, "Reds")) )(255)
-  
-  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_SampleDist.pdf")), width=15, height=12)
-  try(pheatmap(sampleDistMatrix, 
-           clustering_distance_rows=sampleDists, 
-           clustering_distance_cols=sampleDists, 
-           col=colors, 
-           annotation_row = df_treatment_Ind))
-  dev.off()
-  
-  ######################################################################
   ### Pheatmap top50 DE genes
   ######################################################################
   
@@ -277,6 +261,22 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   print ("Finish here for: ")
   print(file_name)
   ######################################################################
+  
+  ######################################################################
+  ### Pheatmap sample distribution
+  ######################################################################
+  sampleDists <- dist(t(assay(vsd)))
+  sampleDistMatrix <- as.matrix(sampleDists)
+  colnames(sampleDistMatrix) <- NULL
+  colors <- colorRampPalette( rev(brewer.pal(9, "Reds")) )(255)
+  
+  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_SampleDist.pdf")), width=15, height=12)
+  try(pheatmap(sampleDistMatrix, 
+               clustering_distance_rows=sampleDists, 
+               clustering_distance_cols=sampleDists, 
+               col=colors, 
+               annotation_row = df_treatment_Ind))
+  dev.off()
   
   #####
   return(res_filtered)
