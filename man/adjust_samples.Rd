@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{adjust_samples}
 \alias{adjust_samples}
-\title{Adjust samples between sample sheet and files for DESeq2}
+\title{Adjust sample names}
 \usage{
 adjust_samples(counts, target)
 }

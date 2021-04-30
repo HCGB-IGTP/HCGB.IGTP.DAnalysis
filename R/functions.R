@@ -285,7 +285,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
 #' Plot batch effect
 #'
 #' This functions plots original PCA and batch corrected given two variables and a putative batch variable
-
 #' @param var1 DESeq2 object
 #' @param var2 DESeq2 object
 #' @param dds_object DESeq2 object
@@ -325,9 +324,9 @@ plot_batch_effect <- function(var1, var2, dds_object, dirName, batch_var) {
   ##
 }
 
-
-#' Adjust samples between sample sheet and files for DESeq2
+#' Adjust sample names
 #'
+#' Adjust samples between sample sheet and files for DESeq2
 #' @param counts Expression counts. Samples as columns
 #' @param target Phenotypic information. Samples as rows
 #' @export
@@ -359,7 +358,8 @@ adjust_samples <- function(counts, target){
 }
 
 #' Plot values per genes
-#'
+#' 
+#' Plot DESeq2 normalization values using ggplot2
 #' @param gene Gene ID
 #' @param tableCounts Expression counts. Samples as columns
 #' @param targetsFile Phenothypic information. Sampes as rows.
@@ -406,6 +406,7 @@ plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_fold
 
 #' Get gene annotation from BioMart
 #'
+#' Gets annotation for the set of genes desired
 #' @param GeneList Gene IDs entries. ENSMBL genes only.
 #' @param datasets By default: hsapiens_gene_ensembl
 #' @export
