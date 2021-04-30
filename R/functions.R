@@ -285,8 +285,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   return(res_filtered)
 }
 
-
-
 #' Plot batch effect
 #'
 #' This functions plots original PCA and batch corrected given two variables and a putative batch variable
@@ -328,4 +326,36 @@ plot_batch_effect <- function(var1, var2, dds_object, dirName, batch_var) {
   print(p4)
   dev.off()
   ##
+}
+
+#' Adjust samples between sample sheet and files for DESeq2
+#'
+#' @param counts Expression counts. Samples as columns
+#' @param target Phenotypic information. Samples as rows
+#' @export
+adjust_samples <- function(counts, target){
+  
+  ## adjust samples in data and in sample sheet
+  counts <- counts[, sort(colnames(counts)) ]
+  counts <- counts[, colnames(counts) %in% rownames(target) ]
+  
+  print ("** Samples in counts:")
+  print (colnames(counts))
+  print ("** Samples in target:")
+  print (rownames(target))
+  
+  print ("** Adjusting...")
+  ##
+  logical_vec <- rownames(target) %in% colnames(counts)
+  target <- target[logical_vec,]
+  counts <- counts[, rownames(target) ]
+  
+  print ("** Match:")
+  print (match(rownames(target), colnames(counts)))
+  
+  list2return <- c("counts" = counts, 
+                   "target" = target)
+  
+  return(list2return)
+  
 }
