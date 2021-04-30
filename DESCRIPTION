@@ -17,6 +17,10 @@ Depends:
   pheatmap,
   BiocParallel,
   apeglm,
-  ggplot2
+  ggplot2,
+  ggpubr,
+  tidyr,
+  biomaRt,
+  dplyr
 
 URL: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis

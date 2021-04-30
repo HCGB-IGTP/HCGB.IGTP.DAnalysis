@@ -325,6 +325,7 @@ plot_batch_effect <- function(var1, var2, dds_object, dirName, batch_var) {
   ##
 }
 
+
 #' Adjust samples between sample sheet and files for DESeq2
 #'
 #' @param counts Expression counts. Samples as columns
@@ -354,5 +355,123 @@ adjust_samples <- function(counts, target){
                    "target" = target)
   
   return(list2return)
+  
+}
+
+#' Plot values per genes
+#'
+#' @param gene Gene ID
+#' @param tableCounts Expression counts. Samples as columns
+#' @param targetsFile Phenothypic information. Sampes as rows.
+#' @param condition List oif phenotypic condition to retrieve in targestFile
+#' @param out_folder Outfolder to create plot
+#' @export
+plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_folder) {
+  library(ggplot2)
+  library(ggpubr)
+  library(data.table)
+  
+  gene_table <- tableCounts[tableCounts$Gene==gene,]
+  print(gene_table)
+  
+  ## check if DE table and contains Gene, pvalue, etc
+  gene_table <- dplyr::select(gene_table, -c("Gene", "baseMean", "log2FoldChange", "lfcSE","pvalue","padj"))
+  print(gene_table)
+  
+  ## melt data
+  gene_table_long <- melt(gene_table,variable.name="sample", value.name="Count")
+  rownames(gene_table_long) <- gene_table_long$sample
+  print(gene_table_long)
+  
+  ## get annotation
+  print(class(condition))
+  print(condition)
+  annot_info <- targetsFile[rownames(gene_table_long), condition]
+  print(annot)
+  
+  test <- merge(gene_table_long, annot_info, by.x='sample', by.y="Sample_Name")
+  print(test)
+  
+  ## check if multiple conditions
+  x.var = rlang::sym(condition[1])
+  y.var = rlang::sym(condition[2])
+  
+  p <- ggplot(test, aes(x = !! x.var, y = Count, fill= !! y.var)) + 
+    geom_boxplot() + geom_point(position=position_jitterdodge(),alpha=0.3)
+  
+  pdf(file.path(out_folder, paste0('boxplot_gene-', gene, '.pdf')))
+  print(p)
+  dev.off()
+}
+
+#' Get gene annotation from BioMart
+#'
+#' @param GeneList Gene IDs entries. ENSMBL genes only.
+#' @param datasets By default: hsapiens_gene_ensembl
+#' @export
+get_gene_annotation <- function(Genelist, species="hsapiens_gene_ensembl") {
+  ##get gene symbols from biomart - watch out for suffixes effect on annotation retrieval!!!
+  
+  library(biomaRt)
+  mart <- useMart(biomart = "ensembl", dataset = species)
+  
+  ## If we filter by hgnc_symbol it gets duplicates and it is not uniq
+  ## ENSEMBL id is unique
+  
+  # Several entries for UNIPROT ids
+  GeneSymbolsTable_full <-getBM(attributes = c('ensembl_gene_id_version','ensembl_gene_id', 
+                                               'hgnc_symbol', 'description', 'gene_biotype', 
+                                               'uniprot_gn_id', 'uniprotswissprot'),
+                                filters = 'ensembl_gene_id', 
+                                values = Genelist,
+                                mart = mart)
+  
+  ## we will be using uniprot_swissprot
+  #head(GeneSymbolsTable_full)
+  #length(unique(GeneSymbolsTable_full$uniprot_gn))
+  #length(unique(GeneSymbolsTable_full$uniprotswissprot))
+  
+  ## discard missing swisprot ids
+  library(tidyr)
+  GeneSymbolsTable_swissprot_filter <- GeneSymbolsTable_full[!(is.na(GeneSymbolsTable_full$uniprotswissprot) | GeneSymbolsTable_full$uniprotswissprot==""), ]
+  #head(GeneSymbolsTable_swissprot_filter)
+  #dim(GeneSymbolsTable_full)
+  #dim(GeneSymbolsTable_swissprot_filter)
+  #length(unique(GeneSymbolsTable_swissprot_filter$uniprotswissprot))
+  
+  #example_df <- head(GeneSymbolsTable_swissprot_filter, 1000)
+  #example_df %>% group_by(uniprotswissprot) %>% mutate(uniprot_IDs = paste0(uniprot_gn, collapse = ",")) 
+  
+  ## merge by , uniprot_gn for each UniProt-Swissprot identified
+  df_filtered <- GeneSymbolsTable_swissprot_filter %>% 
+    group_by(uniprotswissprot) %>% 
+    mutate(uniprot_IDs = paste0(unique(uniprot_gn_id), collapse = ","))
+  
+  df_tmp <- df_filtered %>% 
+    group_by(ensembl_gene_id) %>% 
+    mutate(hgnc_symbol_ID = paste0(unique(hgnc_symbol), collapse = ","))
+  
+  df_filtered2 <- df_tmp %>% 
+    group_by(ensembl_gene_id) %>% 
+    mutate(uniprotswissprot_IDs = paste0(unique(uniprotswissprot), collapse = ","))
+  
+  dim(df_filtered2)
+  head(df_filtered2)
+  tail(df_filtered2)
+  
+  ## discard column: uniprot_gn_id, uniprot_swissprot
+  df_filtered2$uniprot_gn_id <- NULL
+  df_filtered2$uniprotswissprot <- NULL
+  df_filtered2$hgnc_symbol <- NULL
+  
+  dim(df_filtered)
+  head(df_filtered)
+  
+  ## remove duplicates
+  df_filtered3 <- df_filtered2[!duplicated(df_filtered2),]
+  dim(df_filtered3)
+  head(df_filtered3)
+  
+  return(df_filtered3)
   
 }
