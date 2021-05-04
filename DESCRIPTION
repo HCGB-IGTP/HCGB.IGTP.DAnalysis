@@ -16,7 +16,6 @@ Depends:
   DESeq2,
   pheatmap,
   BiocParallel,
-  apeglm,
   ggplot2,
   ggpubr,
   tidyr,
