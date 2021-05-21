@@ -433,7 +433,7 @@ get_gene_annotation <- function(Genelist, species="hsapiens_gene_ensembl") {
   #length(unique(GeneSymbolsTable_full$uniprotswissprot))
   
   ## discard missing swisprot ids
-  library(tidyr)
+  #library(tidyr)
   GeneSymbolsTable_swissprot_filter <- GeneSymbolsTable_full[!(is.na(GeneSymbolsTable_full$uniprotswissprot) | GeneSymbolsTable_full$uniprotswissprot==""), ]
   #head(GeneSymbolsTable_swissprot_filter)
   #dim(GeneSymbolsTable_full)
@@ -476,6 +476,8 @@ get_gene_annotation <- function(Genelist, species="hsapiens_gene_ensembl") {
   return(df_filtered3)
   
 }
+
+
 #' Get gene coordinates from BioMart
 #'
 #' Gets coordinates for the set of genes desired
