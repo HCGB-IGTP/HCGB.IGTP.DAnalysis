@@ -476,3 +476,26 @@ get_gene_annotation <- function(Genelist, species="hsapiens_gene_ensembl") {
   return(df_filtered3)
   
 }
+#' Get gene coordinates from BioMart
+#'
+#' Gets coordinates for the set of genes desired
+#' @param GeneList Gene IDs entries. ENSMBL genes only.
+#' @param datasets By default: hsapiens_gene_ensembl
+#' @export
+get_gene_coordinates <- function(Genelist, species="hsapiens_gene_ensembl") {
+  ##get gene symbols from biomart - watch out for suffixes effect on annotation retrieval!!!
+  
+  library(biomaRt)
+  mart <- useMart(biomart = "ensembl", dataset = species)
+  
+  ## If we filter by hgnc_symbol it gets duplicates and it is not uniq
+  ## ENSEMBL id is unique
+  
+  # Several entries for UNIPROT ids
+  Gene_coordinatesTable <-getBM(attributes = c('ensembl_gene_id', 'chromosome_name', 'start_position', 'end_position', 'strand'),
+                                filters = 'ensembl_gene_id', 
+                                values = Genelist,
+                                mart = mart)
+  
+  return(Gene_coordinatesTable)
+}
