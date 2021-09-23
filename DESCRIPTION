@@ -1,6 +1,6 @@
 Package: HCGB.IGTP.DAnalysis
 Title: Useful in-house functions for differential analysis
-Version: 0.0.1
+Version: 0.2.1
 Authors@R: 
     person(given = "Jose Francisco",
            family = "Sanchez-Herrero",
@@ -20,5 +20,11 @@ Depends:
   ggpubr,
   tidyr,
   biomaRt,
-  dplyr
+  dplyr,
+  fgsea,
+  msigdbr,
+  ViSEAGO,
+  topGO,
+  RColorBrewer,
+  data.table
 URL: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis

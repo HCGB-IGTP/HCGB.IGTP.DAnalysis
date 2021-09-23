@@ -511,6 +511,7 @@ get_gene_coordinates <- function(Genelist, species="hsapiens_gene_ensembl") {
 #' @export
 create_col_palette <- function(columnGiven, levels_given, palette_given="Paired") {
   
+  library(RColorBrewer)
   ## reorder levels:
   colfactors <- factor(as.factor(columnGiven), levels=levels_given)
   
