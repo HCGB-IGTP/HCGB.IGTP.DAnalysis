@@ -1,5 +1,5 @@
 Package: HCGB.IGTP.DAnalysis
-Title: Useful in-house functions for differential analysis
+Title: Useful in-house functions for multiple analysis
 Version: 0.2.1
 Authors@R: 
     person(given = "Jose Francisco",
@@ -13,18 +13,17 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Depends:
+  RColorBrewer,
+  tidyr,
+  dplyr,
+  ggplot2,
   DESeq2,
   pheatmap,
   BiocParallel,
-  ggplot2,
   ggpubr,
-  tidyr,
   biomaRt,
-  dplyr,
   fgsea,
   msigdbr,
   ViSEAGO,
-  topGO,
-  RColorBrewer,
-  data.table
+  topGO
 URL: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis
