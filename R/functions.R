@@ -114,6 +114,12 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
                        numerator="example1", denominator="example2", 
                        OUTPUT_Data_dir, df_treatment_Ind, threads=2) {
   
+  
+  library(DESeq2)
+  library(vsn)
+  library(EnhancedVolcano)
+  
+  
   ## set name
   file_name <- paste0(name, "_", numerator, "_vs_", denominator)
   
@@ -189,11 +195,13 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   ######################################################################
   ## volcano
   ######################################################################
-  jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-volcano-plot.jpeg")), 1500, 1000, pointsize=20)
+  #jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-volcano-plot.jpeg")), 1500, 1000, pointsize=20)
   volcano_main_title <- paste0("Volcano Plot: ", numerator, " vs ", denominator)
-  HCGB.IGTP.DAnalysis::volcanoplot(res = alldata, main=volcano_main_title ,lfcthresh=round(log2(1.2),2), sigthresh=0.05, textcx=.8)
-  dev.off()
-  
+  volcan_plot <- EnhancedVolcano::EnhancedVolcano(alldata, x="log2FoldChange", y="padj", lab="",
+                                   pCutoff=0.05, FCcutoff=1.2, pointSize=3, labSize=6) + ggplot2::scale_x_continuous()
+  HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                                name_file = paste0(file_name, "_DiffExpression-volcano-plot"), plot_given = volcan_plot)
+
   ######################################################################
   ## Transform normal
   ######################################################################
@@ -238,24 +246,26 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   select <- select[!is.na(select)] ## discard NA values
   
   ## plot rld
-  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation.pdf")), width=15, height=12)
-  try(pheatmap(assay(rld)[select,], main="Log Transformation Pheatmap (p.adj<0.05 and [logFC]>1.2)",
+  try(plot1 <- pheatmap(assay(rld)[select,], main="Log Transformation Pheatmap (p.adj<0.05 and [logFC]>1.2)",
 	   cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
 	   annotation_col = df_treatment_Ind,
 	   color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
 	   scale="row" ## centered and scale values per row
   ))
-  dev.off()
+  HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                                name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"), plot_given = plot1)
   
   ## plot vsd
-  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
-  try(pheatmap(assay(vsd)[select,], main="Variance Stabilization Pheatmap (p.adj<0.05 and [logFC]>1.2)",
+  #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
+  try(plot2 <- pheatmap(assay(vsd)[select,], main="Variance Stabilization Pheatmap (p.adj<0.05 and [logFC]>1.2)",
 	   cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
 	   annotation_col = df_treatment_Ind,
 	   color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
 	   scale="row" ## centered and scale values per row7
   ))
-  dev.off()
+  
+  HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                                name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), plot_given = plot2)
   
   ######################################################################
   print ("Finish here for: ")
@@ -735,4 +745,17 @@ plot_GSEA <- function(fgRes, title_given) {
     theme_minimal()
   
   return(g)
+}
+
+#' Save plot in pdf
+#' 
+#' Save a plot in a pdf in the folder provided.
+#' @param folder_path Absolute path to save pdf
+#' @param name_file PDF file name, do not include extension
+#' @param plot_given Plot object
+#' @export
+save_pdf <- function(folder_path, name_file, plot_given) {
+  pdf(file.path(folder_path, paste0(name_file, ".pdf")), paper = "A4r", width = 35, height = 12)
+  print(plot_given)
+  dev.off()
 }
