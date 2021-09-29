@@ -244,6 +244,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   # Plotting Top 50 significant DE genes with different normalization methods: 
   select <- rownames(sign.data)[1:50]
   select <- select[!is.na(select)] ## discard NA values
+
+  if ( length(select) > 5 ) {
   
   ## plot rld
   try(plot1 <- pheatmap(assay(rld)[select,], main="Log Transformation Pheatmap (p.adj<0.05 and [logFC]>1.2)",
@@ -267,29 +269,15 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
                                 name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), plot_given = plot2)
   
+  }
+
   ######################################################################
   print ("Finish here for: ")
   print(file_name)
   ######################################################################
   
-  ######################################################################
-  ### Pheatmap sample distribution
-  ######################################################################
-  sampleDists <- dist(t(assay(vsd)))
-  sampleDistMatrix <- as.matrix(sampleDists)
-  colnames(sampleDistMatrix) <- NULL
-  colors <- colorRampPalette( rev(brewer.pal(9, "Reds")) )(255)
-  
-  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_SampleDist.pdf")), width=15, height=12)
-  try(pheatmap(sampleDistMatrix, 
-               clustering_distance_rows=sampleDists, 
-               clustering_distance_cols=sampleDists, 
-               col=colors, 
-               annotation_row = df_treatment_Ind))
-  dev.off()
-  
   #####
-  return(res_filtered)
+  return(alldata)
 }
 
 #' Plot batch effect
