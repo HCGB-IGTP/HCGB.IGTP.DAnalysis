@@ -533,14 +533,14 @@ create_col_palette <- function(columnGiven, levels_given, palette_given="Paired"
 #' @param nodeSize_given Size of the node used to prune the GO hierarchy from the terms which have less than X annotated genes
 #' @param cutoff_given Pvalue cutoff given
 #' @export
-get_topGO_data <- function(list_genes, list_all_genes, gene2GO, ont_given="B", nodeSize_given=5, cutoff_given=0.05) {
+get_topGO_data <- function(list_genes, list_all_genes, gene2GO, ont_given="B", nodeSize_given=5, cutoff_given=0.05, statistic_given="fisher") {
   
   library(ViSEAGO)
   library(topGO)
   
   ## create topGO data 
   topGO_data <- ViSEAGO::create_topGOdata(geneSel = list_genes, allGenes = list_all_genes,  
-                                          gene2GO = gene2GO,  ont=ont_given, nodeSize = nodeSize_given, statistic_given="fisher")
+                                          gene2GO = gene2GO,  ont=ont_given, nodeSize = nodeSize_given)
   
   ## topGO_data: contains all gene identifiers and their scores, GO annotations, GO hierarchical structure
   ##             and additional information require to perform enrichment analysis
@@ -572,7 +572,7 @@ get_topGO_data <- function(list_genes, list_all_genes, gene2GO, ont_given="B", n
   list2return <- list(
     "topGO" = topGO_data,
     "elim" = elim_data,
-    "classic" = classic_data,
+    "classic" = classic_data
   )
   
   return(list2return)
@@ -687,10 +687,10 @@ rank_list_by <- function(table_data, option_given="logFC") {
 #' @param title_given Title to include in the ggplot generated
 #' @param nproc_given Number of threads to use
 #' @export
-FGSEA_GSEA <- function(gene_list_provided, myGeneSet, title_given="example", nproc_given=2) {
+FGSEA_GSEA <- function(gene_list_provided, myGeneSet, title_given="example", nproc_given=2, minSize=10, maxSize=600, nPermSimple = 10000) {
   
   library(fgsea)
-  fgRes <- fgsea::fgseaMultilevel(pathways = myGeneSet, minSize=10, maxSize=600, nPermSimple = 10000,
+  fgRes <- fgsea::fgseaMultilevel(pathways = myGeneSet, minSize=minSize, maxSize=maxSize, nPermSimple = nPermSimple,
                                   stats = gene_list_provided, nproc = nproc_given) %>% as.data.frame()
   #minSize=1,
   #minSize=15, maxSize=600, nperm=10000) %>% as.data.frame()
