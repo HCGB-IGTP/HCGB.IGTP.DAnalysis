@@ -198,7 +198,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   #jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-volcano-plot.jpeg")), 1500, 1000, pointsize=20)
   volcano_main_title <- paste0("Volcano Plot: ", numerator, " vs ", denominator)
   volcan_plot <- EnhancedVolcano::EnhancedVolcano(alldata, x="log2FoldChange", y="padj", lab="",
-                                   pCutoff=0.05, FCcutoff=1.2, pointSize=3, labSize=6) + ggplot2::scale_x_continuous()
+                                   pCutoff=0.05, FCcutoff=log(1.2), pointSize=3, labSize=6) + 
+    ggplot2::scale_x_continuous() + ggplot2::labs(title = volcano_main_title)
   HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
                                 name_file = paste0(file_name, "_DiffExpression-volcano-plot"), plot_given = volcan_plot)
 
