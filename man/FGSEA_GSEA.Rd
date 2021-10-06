@@ -8,7 +8,10 @@ FGSEA_GSEA(
   gene_list_provided,
   myGeneSet,
   title_given = "example",
-  nproc_given = 2
+  nproc_given = 2,
+  minSize = 10,
+  maxSize = 600,
+  nPermSimple = 10000
 )
 }
 \arguments{

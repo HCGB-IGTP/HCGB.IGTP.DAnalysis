@@ -25,5 +25,6 @@ Depends:
   fgsea,
   msigdbr,
   ViSEAGO,
-  topGO
+  topGO,
+  UpSetR
 URL: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis

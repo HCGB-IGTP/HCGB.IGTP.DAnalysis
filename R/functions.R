@@ -748,3 +748,24 @@ save_pdf <- function(folder_path, name_file, plot_given) {
   print(plot_given)
   dev.off()
 }
+
+#' Create UpSetR plot
+#' 
+#' Create multiple interesection between sets using UpSetR package
+#' @param data_set A dataframe containing as columns de sets, as rows the items and values are 0/1 for absence/presence. You can also provide UpSetR::formList(list_of_sets)
+#' @param sets Names of the set of interest to include in the comparison
+#' @param y.label Name to include in the Y axis. Default: Items shared
+#' @param x.label Name to include in the X axis. Default: Items/group
+#' @export
+create_upset_plot <- function(data_set, sets, y.label="Items shared", x.label="Items/group") {
+  library(UpSetR)
+  p <- upset(data_set, sets = sets,
+             mainbar.y.label = y.label,    # items shared
+             sets.x.label = x.label,       # items/group
+             order.by = "freq", sets.bar.color = "darkblue",
+             point.size = 4,    matrix.color = "Red",
+             nintersects = 100, text.scale = 1.5,  keep.order = TRUE) ## order set group provided
+  print(p)
+  return(p)
+}
+

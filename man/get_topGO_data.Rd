@@ -10,7 +10,8 @@ get_topGO_data(
   gene2GO,
   ont_given = "B",
   nodeSize_given = 5,
-  cutoff_given = 0.05
+  cutoff_given = 0.05,
+  statistic_given = "fisher"
 )
 }
 \arguments{
