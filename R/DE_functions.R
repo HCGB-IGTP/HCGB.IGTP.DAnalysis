@@ -362,8 +362,8 @@ adjust_samples <- function(counts, target){
 #' @param gene Gene ID
 #' @param tableCounts Expression counts. Samples as columns
 #' @param targetsFile Phenothypic information. Sampes as rows.
-#' @param condition List oif phenotypic condition to retrieve in targestFile
-#' @param out_folder Outfolder to create plot
+#' @param condition List of phenotypic condition to retrieve in targestFile
+#' @param out_folder Out folder to create plot
 #' @export
 plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_folder) {
   library(ggplot2)
@@ -398,9 +398,9 @@ plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_fold
   p <- ggplot(test, aes(x = !! x.var, y = Count, fill= !! y.var)) + 
     geom_boxplot() + geom_point(position=position_jitterdodge(),alpha=0.3)
   
-  pdf(file.path(out_folder, paste0('boxplot_gene-', gene, '.pdf')))
-  print(p)
-  dev.off()
+  ## save plot
+  save_pdf(folder_path = out_folder, name_file = paste0('boxplot_gene-', gene), plot_given = p)
+  return(p)
 }
 
 #' Get names provided in comparison

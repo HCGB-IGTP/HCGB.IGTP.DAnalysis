@@ -82,3 +82,23 @@ create_upset <- function(data_dir, pattern2search) {
   
   return(data2return)
 }
+
+#' Get UpSetR unique intersect
+#' 
+#' Get information of the unique items in a given intersect
+#' @param data_set Matrix containing information for each set and item. Created from: create_upset_data() and/or returned by create_upset()
+#' @param set2test Set name to retrieve unique single items. It can be one or two items. e.g. male-female_down, c("example_down", "example-cond2_down")
+#' @return List of items unique for the set of interest
+#' @export
+get_single_UpSet_plot <- function(data_set, set2test) {
+  data_df <- data.frame()
+  if (length(set2test)==2) {
+    data_df <- data_set[ data_set[[set2test[1]]]==1 & data_set[[set2test[1]]] == data_set[[set2test[2]]] & rowSums(data_set)==2,]  
+  } else if (length(set2test)==1) {
+    data_df <- data_set[ data_set[[set2test]]==1 & rowSums(data_set)==1,]  
+  } else {
+    print("ERROR: Option not available")
+  }
+  return(rownames(data_df))
+}
+

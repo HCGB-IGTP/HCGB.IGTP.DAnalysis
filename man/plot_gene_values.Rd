@@ -13,9 +13,9 @@ plot_gene_values(gene, tableCounts, targetsFile, condition, out_folder)
 
 \item{targetsFile}{Phenothypic information. Sampes as rows.}
 
-\item{condition}{List oif phenotypic condition to retrieve in targestFile}
+\item{condition}{List of phenotypic condition to retrieve in targestFile}
 
-\item{out_folder}{Outfolder to create plot}
+\item{out_folder}{Out folder to create plot}
 }
 \description{
 Plot DESeq2 normalization values using ggplot2
