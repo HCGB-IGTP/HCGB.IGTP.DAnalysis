@@ -1,30 +1,30 @@
 Package: HCGB.IGTP.DAnalysis
 Title: Useful in-house functions for multiple analysis
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: 
     person(given = "Jose Francisco",
            family = "Sanchez-Herrero",
            role = c("aut", "cre"),
            email = "jfbioinformatics@gmail.com")
-Description: Package containing useful in-house functions for differential analysis (expression, methylation, microarrays)
+Description: Package containing useful in-house functions for multiple analysis (expression, methylation, microarrays)
 License: use_gpl3_license()
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
-Depends:
+RoxygenNote: 7.1.2.9000
+Imports:
+  BiocParallel,
+  biomaRt,
+  DESeq2,
+  dplyr,
+  fgsea,
+  ggplot2,
+  ggpubr,
+  pheatmap,
+  msigdbr,
   RColorBrewer,
   tidyr,
-  dplyr,
-  ggplot2,
-  DESeq2,
-  pheatmap,
-  BiocParallel,
-  ggpubr,
-  biomaRt,
-  fgsea,
-  msigdbr,
-  ViSEAGO,
   topGO,
-  UpSetR
+  UpSetR,
+  ViSEAGO
 URL: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis
