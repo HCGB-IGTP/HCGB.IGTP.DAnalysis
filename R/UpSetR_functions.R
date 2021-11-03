@@ -28,9 +28,6 @@ create_upset_plot <- function(data_set, sets, y.label="Items shared", x.label="I
 #' 
 #' Create dataframe with presence/abscence from list to plot interesection between sets using UpSetR package
 #' @param list_files A list of names list of characters. 
-#' @param sets Names of the set of interest to include in the comparison
-#' @param y.label Name to include in the Y axis. Default: Items shared
-#' @param x.label Name to include in the X axis. Default: Items/group
 #' @export
 create_upset_data <- function(list_files) {
   list_files.ids <- unique(unlist(list_files))

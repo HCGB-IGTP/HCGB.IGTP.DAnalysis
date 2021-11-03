@@ -30,7 +30,7 @@ DESeq2_HCGB_function(
 
 \item{df_treatment_Ind}{Dataframe containing additional information for each sample}
 
-\item{threads}{Number of CPUs to use \link{Default 2}.}
+\item{threads}{Number of CPUs to use \link{Default: 2}.}
 }
 \description{
 This functions plots pvalues original and after filtering

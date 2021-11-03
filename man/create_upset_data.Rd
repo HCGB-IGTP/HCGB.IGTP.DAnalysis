@@ -8,12 +8,6 @@ create_upset_data(list_files)
 }
 \arguments{
 \item{list_files}{A list of names list of characters.}
-
-\item{sets}{Names of the set of interest to include in the comparison}
-
-\item{y.label}{Name to include in the Y axis. Default: Items shared}
-
-\item{x.label}{Name to include in the X axis. Default: Items/group}
 }
 \description{
 Create dataframe with presence/abscence from list to plot interesection between sets using UpSetR package

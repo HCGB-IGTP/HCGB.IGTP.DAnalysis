@@ -108,7 +108,7 @@ discard_lowCounts_df = function(df_given, min_count=10) {
 #' @param denominator Name of the denominator comparison
 #' @param OUTPUT_Data_dir Folder path to store results
 #' @param df_treatment_Ind Dataframe containing additional information for each sample
-#' @param threads Number of CPUs to use [Default 2].
+#' @param threads Number of CPUs to use [Default: 2].
 #' @export
 DESeq2_HCGB_function = function(dds_object, coef_n, name, 
                                 numerator="example1", denominator="example2", 
@@ -118,7 +118,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   library(DESeq2)
   library(vsn)
   library(EnhancedVolcano)
-  
+  library(BiocParallel)
+  library(ggfortify)
+  library(ggrepel)
   
   ## set name
   file_name <- paste0(name, "_", numerator, "_vs_", denominator)
@@ -200,6 +202,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   volcan_plot <- EnhancedVolcano::EnhancedVolcano(alldata, x="log2FoldChange", y="padj", lab="",
                                                   pCutoff=0.05, FCcutoff=log(1.2), pointSize=3, labSize=6) + 
     ggplot2::scale_x_continuous() + ggplot2::labs(title = volcano_main_title)
+  
   HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
                                 name_file = paste0(file_name, "_DiffExpression-volcano-plot"), plot_given = volcan_plot)
   
@@ -249,7 +252,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   if ( length(select) > 5 ) {
     
     ## plot rld
-    try(plot1 <- pheatmap(assay(rld)[select,], main="Log Transformation Pheatmap (p.adj<0.05 and [logFC]>1.2)",
+    try(plot1 <- pheatmap(assay(rld)[select,], main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
                           cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                           annotation_col = df_treatment_Ind,
                           color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -260,7 +263,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
     
     ## plot vsd
     #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
-    try(plot2 <- pheatmap(assay(vsd)[select,], main="Variance Stabilization Pheatmap (p.adj<0.05 and [logFC]>1.2)",
+    try(plot2 <- pheatmap(assay(vsd)[select,], main="Variance Stabilization Pheatmap (p.adj<0.05 and [FC]>1.2)",
                           cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                           annotation_col = df_treatment_Ind,
                           color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -271,6 +274,22 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
                                   name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), plot_given = plot2)
     
   }
+  
+  ## Add PCA for all significant results
+  min_r <- length(colnames(sign.data))-4
+  pca_res <- stats::prcomp(t(sign.data[,-c(1,min_r:length(colnames(sign.data)))]), # do not use neither gene names or DESeq
+                           scale=TRUE)
+
+  pdf(file.path(OUTPUT_Data_sample,"PCA_multiple.pdf"))
+  for (i in colnames(df_treatment_Ind)) {
+    p<-autoplot(pca_res, 
+                frame=TRUE, frame.type="norm",
+                data=df_treatment_Ind, colour=i) + theme_classic() + ggtitle(paste0("Variable: ", i )) + 
+      geom_label_repel(aes(label=row.names(df_treatment_Ind)), max.overlaps = 500)
+    
+    print(p)
+  }
+  dev.off()
   
   ######################################################################
   print ("Finish here for: ")
