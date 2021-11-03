@@ -186,6 +186,14 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   # Results table in the same order than counting table
   write.table(sign.data, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_table_SignificantDE.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
   
+  ## check if it is worth to continue, avoid error if missing sign.data
+  if (length(rownames(sign.data)[1:50]) > 2) {
+    print("")
+  } else {
+    return(alldata)
+  }
+  
+  
   ######################################################################
   ## ma plot
   ######################################################################
