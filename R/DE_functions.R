@@ -285,8 +285,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   
   ## Add PCA for all significant results
   min_r <- length(colnames(sign.data))-4
-  pca_res <- stats::prcomp(t(sign.data[,-c(1,min_r:length(colnames(sign.data)))]), # do not use neither gene names or DESeq
-                           scale=TRUE)
+  #data2pca <- t(sign.data[,-c(1,min_r:length(colnames(sign.data)))]) # do not use neither gene names or DESeq
+  data2pca <- t(sign.data[,rownames(df_treatment_Ind)])
+  pca_res <- stats::prcomp(as.matrix(data2pca), scale=TRUE)
 
   pdf(file.path(OUTPUT_Data_sample,"PCA_multiple.pdf"))
   for (i in colnames(df_treatment_Ind)) {
