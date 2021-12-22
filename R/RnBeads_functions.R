@@ -35,6 +35,14 @@ load_RnBeads_object <- function(dir4loading) {
 }
 
 ##
+#' Check for covariates using RnBead object
+#'
+#' This functions checks for covariates at cpg and promoters
+#' 
+#' @param var2check Suspected variable to test for Covariate
+#' @param rnb.set_given RnBeads rnb.set object
+#' @param plot_dir Folder to save plot results
+#' @export
 check_covariates <- function(var2check, rnb.set_given, plot_dir) {
   reg.types <- c("cpgislands", "promoters")
   
@@ -99,7 +107,16 @@ check_covariates <- function(var2check, rnb.set_given, plot_dir) {
   dev.off()
   
 }
+
 ##
+#' Check for covariates using RnBead object
+#'
+#' This functions checks for covariates at cpg and promoters
+#' 
+#' @param var2check Suspected variable to test for Covariate
+#' @param rnb.set_given RnBeads rnb.set object
+#' @param plot_dir Folder to save plot results
+#' @export
 dreduction_function <- function(rnb.set_given, vars_dreduction, methods_dreduction, pdf_file) {
   pdf(pdf_file)
   for (i in vars_dreduction) {
@@ -118,7 +135,13 @@ dreduction_function <- function(rnb.set_given, vars_dreduction, methods_dreducti
   }
   dev.off()
 }
-###
+
+##
+#' BetaDistribution plots
+#'
+#' This functions creates beta distribution plots for a set of variables of interest
+#' 
+#' @export
 beta_values_plots <- function(rnb.set_given, variablesOfInterest, pdf_name) {
   ## calculate methylation values
   print("Calculate methylation values")
@@ -138,7 +161,13 @@ beta_values_plots <- function(rnb.set_given, variablesOfInterest, pdf_name) {
   }
   dev.off()
 }
-### 
+
+##
+#' Loads custom annotation 
+#'
+#' This functions loads and creates custom annotation from IGTP server
+#' 
+#' @export
 custom_annotation <- function() {
   # Loading our custom enhancer annotations
   
@@ -153,8 +182,16 @@ custom_annotation <- function() {
   colnames(AllEnhancers) <- c("Chromosome", "Start", "End", "name")
   rnb.set.annotation("AllEnhancers", AllEnhancers, assembly="hg19")
 }
-###
+
+##
+#' VolcanoPlot region
+#'
+#' This functions creates volcano plot using a region of interest
+#' 
+#' @export
 my_volcanoplot_region <- function (res, lfcthresh=2, sigthresh=0.05, main="Volcano Plot", legendpos="topleft", textcx=1, point_cex = 0.3, ...) {
+  
+  ## TODO: use Enhanced volcano
   
   with(res, plot( mean.mean.diff, -log10( comb.p.adj.fdr), pch=1, main=main, cex=point_cex, ...))
   
@@ -174,8 +211,16 @@ my_volcanoplot_region <- function (res, lfcthresh=2, sigthresh=0.05, main="Volca
          legend=c(paste("FDR<",sigthresh,sep=""), paste("|FC|>",round(2^lfcthresh,1),sep=""), "both"), 
          pch=1, cex=.8, col=c("red","orange","green"))
 }
-###
+
+##
+#' VolcanoPlot site
+#'
+#' This functions creates volcano plot using a site of interest
+#' 
+#' @export
 my_volcanoplot_sites <- function (res, lfcthresh=2, sigthresh=0.05, main="Volcano Plot", legendpos="topleft", textcx=1, point_cex = 0.3, ...) {
+  
+  ## TODO: use Enhanced volcano
   
   with(res, plot( mean.diff, -log10( diffmeth.p.adj.fdr), pch=1, main=main, cex=point_cex, ...))
   
