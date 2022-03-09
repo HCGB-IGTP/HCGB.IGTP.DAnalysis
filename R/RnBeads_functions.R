@@ -109,31 +109,36 @@ check_covariates <- function(var2check, rnb.set_given, plot_dir) {
 }
 
 ##
-#' Check for covariates using RnBead object
+#' Creates dimension reduction plots using RnBead object
 #'
-#' This functions checks for covariates at cpg and promoters
+#' This functions creates dimension reduction (PCA & MDS) for RnBead co
 #' 
-#' @param var2check Suspected variable to test for Covariate
+#' @param var2check Suspected variable to include in plot
 #' @param rnb.set_given RnBeads rnb.set object
 #' @param plot_dir Folder to save plot results
+#' @param point_types_column Column in annotation dataframe to use for naming samples.
 #' @export
-dreduction_function <- function(rnb.set_given, vars_dreduction, methods_dreduction, pdf_file) {
-  pdf(pdf_file)
+dreduction_function <- function(rnb.set_given, vars_dreduction, methods_dreduction, 
+                                point_types_column, plot_dir) {
+  
+  dir.create(plot_dir)
+  
   for (i in vars_dreduction) {
     print (paste0("Variable: ", i))
     
     for (f in methods_dreduction) {
+      pdf_file <- paste0(i, "-", f, ".pdf")
       print (paste0("Reduction method: ", f))
       ## generate plot Dreduction
       p<- rnb.plot.dreduction(rnb.set_given, dimensions = c(1, 2), 
-                              plot.type = f,
-                              point.types = "Sample_Name", point.colors=i)  
+                              plot.type = f, 
+                              point.types = point_types_column, 
+                              point.colors=i)  
       
       p2 <- p + ggtitle(paste0("Variable: ", i,". Method: ", f))
-      print(p2)
+      save_pdf(folder_path = plot_dir, name_file = pdf_file, plot_given = p2)
     }
   }
-  dev.off()
 }
 
 ##
