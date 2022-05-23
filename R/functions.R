@@ -40,7 +40,7 @@ save_pdf <- function(folder_path, name_file, plot_given) {
 #' @param DF Dataframe provide
 #' @param n Number of NAs allowed for each row.
 #' @export
-delete.na <- function(DF, n=0) {
+delete_na <- function(DF, n=0) {
   DF[rowSums(is.na(DF)) <= n,]
 }
 
