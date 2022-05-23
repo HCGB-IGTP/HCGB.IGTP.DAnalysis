@@ -105,7 +105,6 @@ check_covariates <- function(var2check, rnb.set_given, plot_dir) {
     
   }
   dev.off()
-  
 }
 
 ##
@@ -113,8 +112,9 @@ check_covariates <- function(var2check, rnb.set_given, plot_dir) {
 #'
 #' This functions creates dimension reduction (PCA & MDS) for RnBead co
 #' 
-#' @param var2check Suspected variable to include in plot
 #' @param rnb.set_given RnBeads rnb.set object
+#' @param vars_dreduction Suspected variables to include in plot
+#' @param methods_dreduction Methods for dimension reduction
 #' @param plot_dir Folder to save plot results
 #' @param point_types_column Column in annotation dataframe to use for naming samples.
 #' @export
@@ -146,15 +146,20 @@ dreduction_function <- function(rnb.set_given, vars_dreduction, methods_dreducti
 #'
 #' This functions creates beta distribution plots for a set of variables of interest
 #' 
+#' @param rnb.set_given RnBeads rnb.set object
+#' @param variablesOfInterest Suspected variables to include in plot
+#' @param pdf_file_folder Folder to save plot results
 #' @export
-beta_values_plots <- function(rnb.set_given, variablesOfInterest, pdf_name) {
+beta_values_plots <- function(rnb.set_given, variablesOfInterest, pdf_file_folder) {
   ## calculate methylation values
+  
+  dir.create(pdf_file_folder)
+  
   print("Calculate methylation values")
   mm_table <- meth(rnb.set_given)  
   
   ## calculate distribution and generate plots
   print ("Generate plots")
-  pdf(pdf_name)
   for (i in variablesOfInterest) {
     
     print (paste0("Variable: ",i))
@@ -162,9 +167,10 @@ beta_values_plots <- function(rnb.set_given, variablesOfInterest, pdf_name) {
                                                 sample.group.inds = rnb.sample.groups(rnb.set_given)[[i]], 
                                                 annotation = i)
     p2 <- p + ggtitle(paste0("Beta Distribution group by :", i))
-    print(p2)
+    
+    save_pdf(folder_path = pdf_file_folder, 
+                                  name_file = i, plot_given = p2)
   }
-  dev.off()
 }
 
 ##
@@ -245,3 +251,70 @@ my_volcanoplot_sites <- function (res, lfcthresh=2, sigthresh=0.05, main="Volcan
          legend=c(paste("FDR<",sigthresh,sep=""), paste("|FC|>",round(2^lfcthresh,1),sep=""), "both"), 
          pch=1, cex=.8, col=c("red","orange","green"))
 }
+
+##
+#' RnBeads Locus plotter caller
+#'
+#' This functions calls rnb.plot.locus.profile for a gene or region of interest
+#' @param RnBeads_object
+#' @param grouping_class rnb.sample.groups output grouping samples
+#' @param gene_name Name of the gene/region to create pdf
+#' @param comparison Name to add to create pdf
+#' @param outdir Folder to store pdf
+#' @param chr Chromosome ID
+#' @param start Start position
+#' @param end End position
+#' @export
+locus_plotter <- function(RnBeads_object, grouping_class, gene_name, comparison, outdir, chr, start, end) {
+  
+  ## plotting
+  pdf_name <- file.path(outdir, paste0(gene_name, '-', comparison, '.pdf'))
+  pdf(pdf_name)
+  rnb.plot.locus.profile(RnBeads_object, chr, start, end, grps = grouping_class)
+  dev.off()
+}
+
+##
+#' RnBeads Locus plotter dataframe
+#'
+#' This functions calls locus_plotter (rnb.plot.locus.profile caller) for each entry in a dataframe
+#' @param data_frame_given Dataframe with information from differential_methylation_data/diffMethTable_region_genes...
+#' @param name_given 
+#' @param RnBeads_object
+#' @param sample.grouping rnb.sample.groups output grouping samples
+#' @param out_folder Folder to store pdfs
+#' @export
+plot_genes <- function(data_frame_given, name_given, RnBead_object, sample.grouping, out_folder) {
+  
+  ## data_frame_given contains as columns:
+  ##   "id", "Chromosome", "Start", "End", "symbol", "mean.mean.diff", "comb.p.val", "comb.p.adj.fdr"
+  
+  ## Iterate over a dataframe and plot methylation values  
+  for (row in 1:nrow(data_frame_given)) {
+    symbol_name <- data_frame_given[row, "symbol"]
+    row_id <- data_frame_given[row, "id"]
+    
+    if (is.na(symbol_name)) {
+      gene_name <- row_id
+    } else {
+      gene_name <- paste0(symbol_name, '-', row_id)
+    }
+    
+    ## 
+    print ("##################")
+    print (gene_name)  
+    print (data_frame_given[row,])
+    
+    locus_plotter(RnBeads_object = RnBead_object, grouping_class = sample.grouping, 
+                  gene_name = gene_name, 
+                  comparison = name_given, 
+                  outdir = out_folder,
+                  chr = data_frame_given[row, 'Chromosome'],
+                  start = data_frame_given[row, 'Start'],
+                  end = data_frame_given[row, 'End']
+    )
+    print ('')
+    
+  }
+}
+

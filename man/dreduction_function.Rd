@@ -2,22 +2,27 @@
 % Please edit documentation in R/RnBeads_functions.R
 \name{dreduction_function}
 \alias{dreduction_function}
-\title{Check for covariates using RnBead object}
+\title{Creates dimension reduction plots using RnBead object}
 \usage{
 dreduction_function(
   rnb.set_given,
   vars_dreduction,
   methods_dreduction,
-  pdf_file
+  point_types_column,
+  plot_dir
 )
 }
 \arguments{
 \item{rnb.set_given}{RnBeads rnb.set object}
 
-\item{var2check}{Suspected variable to test for Covariate}
+\item{vars_dreduction}{Suspected variables to include in plot}
+
+\item{methods_dreduction}{Methods for dimension reduction}
+
+\item{point_types_column}{Column in annotation dataframe to use for naming samples.}
 
 \item{plot_dir}{Folder to save plot results}
 }
 \description{
-This functions checks for covariates at cpg and promoters
+This functions creates dimension reduction (PCA & MDS) for RnBead co
 }

@@ -4,7 +4,14 @@
 \alias{beta_values_plots}
 \title{BetaDistribution plots}
 \usage{
-beta_values_plots(rnb.set_given, variablesOfInterest, pdf_name)
+beta_values_plots(rnb.set_given, variablesOfInterest, pdf_file_folder)
+}
+\arguments{
+\item{rnb.set_given}{RnBeads rnb.set object}
+
+\item{variablesOfInterest}{Suspected variables to include in plot}
+
+\item{pdf_file_folder}{Folder to save plot results}
 }
 \description{
 This functions creates beta distribution plots for a set of variables of interest
