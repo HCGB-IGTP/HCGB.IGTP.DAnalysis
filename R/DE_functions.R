@@ -110,9 +110,10 @@ discard_lowCounts_df = function(df_given, min_count=10) {
 #' @param df_treatment_Ind Dataframe containing additional information for each sample
 #' @param threads Number of CPUs to use [Default: 2].
 #' @export
+
 DESeq2_HCGB_function = function(dds_object, coef_n, name, 
-                                numerator="example1", denominator="example2", 
-                                OUTPUT_Data_dir, df_treatment_Ind, threads=2) {
+                                     numerator="example1", denominator="example2", 
+                                     OUTPUT_Data_dir, df_treatment_Ind, threads=2) {
   
   
   library(DESeq2)
@@ -158,16 +159,16 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   ######################################################################
   # Write Results tables
   ######################################################################
-  write.table(res_filtered, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_table.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
+  ## write.table(res_filtered, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_table.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
   
   # Results table ordered by adjusted p-value
   resOrdered <- res_filtered[order(res_filtered$padj),]
-  write.table(resOrdered, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_padj-ordered_table.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
+  ## write.table(resOrdered, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_padj-ordered_table.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
   
   # Save normalized values
   # Normalized values
   normValues <- counts(dds_object, normalized=T)
-  write.table(normValues, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_NormValues_table.txt")), sep="\t", row.names=T, col.names=T, quote=F)
+  ## write.table(normValues, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_NormValues_table.txt")), sep="\t", row.names=T, col.names=T, quote=F)
   
   ## Merge normalized values and differential expression
   alldata <- merge(as.data.frame(counts(dds_object, normalized=TRUE)), as.data.frame(res_filtered), by="row.names", sort=FALSE)
@@ -238,15 +239,15 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   ## the goal of such transformations, this may be unreasonable in the case of 
   ## datasets with many true differences due to the experimental conditions.
   
-  ntd <- normTransform(dds_object)
-  pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-Transformation.pdf")))
+  ## ntd <- normTransform(dds_object)
+  ## pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-Transformation.pdf")))
   ## Normal transformation  
-  meanSdPlot(assay(ntd))
+  ## meanSdPlot(assay(ntd))
   ## RLE transformation
-  meanSdPlot(assay(rld))
+  ## meanSdPlot(assay(rld))
   ## VarianceStabilization transformation
-  meanSdPlot(assay(vsd))
-  dev.off()
+  ## meanSdPlot(assay(vsd))
+  ## dev.off()
   
   ######################################################################
   ### Pheatmap top50 DE genes
@@ -256,6 +257,17 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   # Plotting Top 50 significant DE genes with different normalization methods: 
   select <- rownames(sign.data)[1:50]
   select <- select[!is.na(select)] ## discard NA values
+  
+  
+  print(name)
+  print(numerator)
+  print(denominator)
+  
+  listOfSampls <- c(rownames(df_treatment_Ind[ df_treatment_Ind[as.character(name)]==as.character(numerator),]),
+                    rownames(df_treatment_Ind[ df_treatment_Ind[as.character(name)]==as.character(denominator),])
+  )
+  
+  print(listOfSampls)
   
   if ( length(select) > 5 ) {
     
@@ -267,7 +279,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
                           scale="row" ## centered and scale values per row
     ))
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"), plot_given = plot1)
+                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation_allSamples"), plot_given = plot1)
     
     ## plot vsd
     #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
@@ -279,7 +291,33 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
     ))
     
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz_allSamples"), plot_given = plot2)
+    
+    ## Only samples included in comparison
+    
+    ## plot rld
+    try(plot1 <- pheatmap(assay(rld)[select,listOfSampls], main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
+                          cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
+                          annotation_col = df_treatment_Ind,
+                          color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
+                          scale="row" ## centered and scale values per row
+    ))
+    HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"), plot_given = plot1)
+    
+    
+    ## plot vsd
+    #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
+    try(plot2 <- pheatmap(assay(vsd)[select,listOfSampls], main="Variance Stabilization Pheatmap (p.adj<0.05 and [FC]>1.2)",
+                          cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
+                          annotation_col = df_treatment_Ind,
+                          color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
+                          scale="row" ## centered and scale values per row7
+    ))
+    
+    HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
                                   name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), plot_given = plot2)
+    
     
   }
   
@@ -288,13 +326,16 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   #data2pca <- t(sign.data[,-c(1,min_r:length(colnames(sign.data)))]) # do not use neither gene names or DESeq
   data2pca <- t(sign.data[,rownames(df_treatment_Ind)])
   pca_res <- stats::prcomp(as.matrix(data2pca), scale=TRUE)
-
+  
+  ## only samples included
+  data2pca2 <- t(sign.data[listOfSampls,rownames(df_treatment_Ind)])
+  
   pdf(file.path(OUTPUT_Data_sample,"PCA_multiple.pdf"))
   for (i in colnames(df_treatment_Ind)) {
     p<-autoplot(pca_res, 
-                frame=TRUE, frame.type="norm",
-                data=df_treatment_Ind, colour=i) + theme_classic() + ggtitle(paste0("Variable: ", i )) + 
-      geom_label_repel(aes(label=row.names(df_treatment_Ind)), max.overlaps = 500)
+                #frame=TRUE, frame.type="norm",
+                data=df_treatment_Ind, colour=i) + theme_classic() + ggtitle(paste0("Variable: ", i )) 
+    ##+ geom_label_repel(aes(label=row.names(df_treatment_Ind)), max.overlaps = 500)
     
     print(p)
   }
@@ -465,5 +506,71 @@ get_comparison_resultsNames <- function(str_given) {
   }
   
   return(str2return)
+}
+
+#' Relevel and rung DESEQ2 analysis
+#' 
+#' When running DESeq2 you sometimes require to relevel some comparisons
+#' @param dds_object DESeq2 object
+#' @param category Name of the variable to use within dds_object metadata
+#' @param reference Name of the reference class to set.
+#' @param given_dir Output dir to use
+#' @param dfAnnotation Dataframe containing additional information for each sample
+#' @param int_threads Number of CPUs to use [Default: 2].
+#' @export
+relevel_function <- function(dds_object, category, reference, given_dir, dfAnnotation, int_threads){
+  dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
+  dds_object_releveled <- DESeq(dds_object, parallel = TRUE)
+  
+  # check
+  print("resultsNames(dds_object)")
+  print(resultsNames(dds_object))
+  
+  print("resultsNames(dds_object_releveled)")
+  print(resultsNames(dds_object_releveled))
+  
+  results_list <- list()
+  
+  for (coef_name in resultsNames(dds_object_releveled)) {
+    if (coef_name=="Intercept") {} else {
+      print(paste0(" + Analysis for coefficient: ", coef_name))
+      listNames <- get_comparison_resultsNames(coef_name)
+      
+      res_dds = HCGB.IGTP.DAnalysis::DESeq2_HCGB_function( 
+        dds_object = dds_object_releveled, coef_n = coef_name, 
+        name= listNames[1], 
+        numerator = listNames[2], denominator = listNames[3],
+        OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, 
+        threads = as.numeric(int_threads))
+      
+      ## save to return
+      print (head(res_dds))
+      results_list[[coef_name]] <- res_dds
+    }
+  }
+  
+  ## Init data to return
+  data2return <- list(
+    "dds_obj" = dds_object_releveled,
+    "resultsNames" = resultsNames(dds_object_releveled),
+    "results" = results_list
+  )
+  
+  return(data2return)
+}
+
+#' Filter significant hits from DESEQ2 analysis
+#' 
+#' When running DESeq2 you usually required significant hits.
+#' @param dataF Dataframe with either normalized values and DESEQ2 values or only DESEQ2.
+#' @param sign_value Pvalue adjusted cutoff: Default=0.05
+#' @param LFC Log Fold Change cutoff: Default: 0.26
+#' @export
+filter_signficant_DESEQ <- function(dataF, sign_value = 0.05, LFC=0.26) {
+  
+  #log2FoldChange
+  #padj
+  dataFilt <- dataF[abs(dataF$log2FoldChange)>0.26 & dataF$padj<0.05,]
+  return(dataFilt)
 }
 
