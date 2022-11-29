@@ -1,21 +1,32 @@
 
-############################
-## UpSetR
-############################
 
-## install UpSetR if not installed and loaded it
+## Code example for UpSetR
+
+I have generated some function to speed the use of UpsetR.
+
+UpsetR is a very useful package develop few years ago, https://upset.app/, 
+
+they are hosted in github here:
+https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis and specifically here: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis/blob/master/R/UpSetR_functions.R
+
+UpsetR:
+https://cran.r-project.org/web/packages/UpSetR/vignettes/basic.usage.html
+https://github.com/hms-dbmi/UpSetR
+
+
+Install neccessary packages:
+
+
+```R
+### install UpSetR if not installed and loaded it
 install.packages("UpSetR")
 library(UpSetR)
-############################
+```
 
-############################
+
+
 ## HCGB.IGTP.DAnalysis
 ############################
-## I have generated some function to speed the use of UpsetR
-## they are hosted in github here:
-## https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis
-## and specifically here:
-## https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis/blob/master/R/UpSetR_functions.R
 
 ## Try to install HCGB.IGTP.DAnalysis or just copy paste functions
 ## install devtools if not installed
