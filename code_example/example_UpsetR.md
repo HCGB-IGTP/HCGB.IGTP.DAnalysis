@@ -1,21 +1,27 @@
 
+# Code example for UpSetR
 
-## Code example for UpSetR
+I have generated some functions to speed the use of UpsetR, here I show the usage of them.
 
-I have generated some function to speed the use of UpsetR.
+## What is UpsetR?
 
-UpsetR is a very useful package develop few years ago, https://upset.app/, 
+Upset is a very useful data vizualition package develop few years ago and available [here](https://upset.app/). The idea behind UpSet is to make the intersection sizes easy to compare. 
 
-they are hosted in github here:
-https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis and specifically here: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis/blob/master/R/UpSetR_functions.R
+It allows a better interpretation specially when there are more than 3 intersections generating VennDiagram really difficult to interpret. It was inspired by the infamous [six-set banana venn diagram](https://upset.app/about/). 
 
-UpsetR:
-https://cran.r-project.org/web/packages/UpSetR/vignettes/basic.usage.html
-https://github.com/hms-dbmi/UpSetR
+There are multiple [implementations](https://upset.app/implementations/) of the code in several programming languages, luckily for us in R: UpsetR. More information on the UpsetR package available [here](https://github.com/hms-dbmi/UpSetR) and/or [here](https://cran.r-project.org/web/packages/UpSetR/vignettes/basic.usage.html)
 
+## What do I do here in `HCGB.IGTP.DAnalysis`?
+
+`HCGB.IGTP.DAnalysis` is a package to easily use and speed the usage of some functions.
+
+Regarding UpsetR I have specifically created functions here: [R/UpSetR_functions.R](https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis/blob/bf31e9187d0fedb878d2bda63fd158220f23db2a/R/UpSetR_functions.R)
+
+## Install packages
 
 Install neccessary packages:
 
+- UpSetR
 
 ```R
 ### install UpSetR if not installed and loaded it
@@ -23,12 +29,15 @@ install.packages("UpSetR")
 library(UpSetR)
 ```
 
+- HCGB.IGTP.DAnalysis
 
+`HCGB.IGTP.DAnalysis` is not available in CRAN or Bioconductor, it is just available as a set of functions that I use on a daily basis.
 
-## HCGB.IGTP.DAnalysis
-############################
+Try to install `HCGB.IGTP.DAnalysis` following the steps, if you have any issues, just copy paste functions
 
-## Try to install HCGB.IGTP.DAnalysis or just copy paste functions
+To install packages from github, you need to install it using `devtools` packages firts.
+
+```R
 ## install devtools if not installed
 install.packages("devtools")
 
@@ -37,116 +46,22 @@ devtools::install_github("HCGB-IGTP/HCGB.IGTP.Danalysis")
 
 ## load it
 library(HCGB.IGTP.Danalysis)
+```
+
+If it fails, the functions necessary are here: [R/UpSetR_functions.R](https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis/blob/bf31e9187d0fedb878d2bda63fd158220f23db2a/R/UpSetR_functions.R):
 
 
-## If it fails, here are the functions necessary
+## Toy Example UpsetR
 
-##----------------------------
-## functions
-##----------------------------
-create_upset_plot <- function(data_set, sets, y.label="Items shared", x.label="Items/group") {
-  library(UpSetR)
-  p <- upset(data_set, sets = sets,
-             mainbar.y.label = y.label,    # items shared
-             sets.x.label = x.label,       # items/group
-             order.by = "freq", sets.bar.color = "darkblue",
-             point.size = 4,    matrix.color = "Red",
-             nintersects = 100, text.scale = 1.5,  keep.order = TRUE) ## order set group provided
-  print(p)
-  
-  list2return <- list(
-    "plot" = p,
-    "dataset" = data_set
-  )
-  return(list2return)
-}
+`UpsetR::upset()` is the function that creates the visualization and it basically requires a datafarme containing items as rows and sets as columns. For the presence/absence of an item in a category, they require 1/0 code.
 
-#' Create UpSetR plot dataframe
-#' 
-#' Create dataframe with presence/abscence from list to plot interesection between sets using UpSetR package
-#' @param list_files A list of names list of characters. 
-#' @export
-create_upset_data <- function(list_files) {
-  list_files.ids <- unique(unlist(list_files))
-  df_dat <- as.data.frame(sapply(list_files, function(x) table(factor(x, levels=list_files.ids))))
-  return(df_dat)
-}
+I have implemented a function to create this type of dataframe from a set of list provided which is `create_upset_data()`. Then, I created a shortcut to `UpsetR::upset()` which is `create_upset_plot()` and uses the dataframe and the names of each set to use. This function, returns the plot and the dataframe, that you can easily dump into a csv/excel file to better identify intersections.
 
+On the other hand, as I usually dump list of items (genes, samples, whatever,...) using linux, python or other, into a folder, I created a function that retrieves all files (with a given pattern) in a folder and directly creates the upset plot.
 
-#' Get files for UpSetR plot
-#'  
-#' Get information of interest to produce UpSetR plots from a folder containing files
-#' @param data_dir Absolute path to folder containing files with e.g. comp1-comp2_down.whatever.txt 
-#' @param pattern2search Pattern to include in regex to search file names. e.g. down, complex.isomir, etc
-#' @return List of lists containing data for each set
-#' @export
-get_data_upset <- function(data_dir, pattern2search) {
-  list_files <- list.files(data_dir, pattern2search)
-  listdata = list()
-  for (item in list_files) {
-    print(item)
-    list_produced <- unlist(strsplit(item, split="\\.")) ## comp1-comp2_down.whatever.txt 
-    str_name = list_produced[1] #comp1-comp2_down
-    listdata[[str_name]] = readLines(file.path(data_dir, item))
-  }
-  ## 
-  return(listdata)
-}
+### 1) UpsetR from list of items
 
-#' Creates UpSetR plot
-#' 
-#' Get information of interest to produce UpSetR plots from a folder containing files and return plot generated
-#' @param data_dir Absolute path to folder containing files with e.g. comp1-comp2_down.whatever.txt 
-#' @param pattern2search Pattern to include in regex to search file names. e.g. down, complex.isomir, etc
-#' @return List of plot and data containing data for each set
-#' @export
-create_upset <- function(data_dir, pattern2search) {
-  
-  ## get data   
-  list_files <- get_data_upset(data_dir, pattern2search)
-  
-  print(list_files)
-  
-  ## create plot
-  returnData <- create_upset_plot(data_set = create_upset_data(list_files), 
-                                  sets = names(list_files))
-  
-  data2return <- list(
-    "upset_plot" = returnData,
-    "listFiles" = list_files
-  )
-  
-  return(data2return)
-}
-
-#' Get UpSetR unique intersect
-#' 
-#' Get information of the unique items in a given intersect
-#' @param data_set Matrix containing information for each set and item. Created from: create_upset_data() and/or returned by create_upset()
-#' @param set2test Set name to retrieve unique single items. It can be one or two items. e.g. male-female_down, c("example_down", "example-cond2_down")
-#' @return List of items unique for the set of interest
-#' @export
-get_single_UpSet_plot <- function(data_set, set2test) {
-  data_df <- data.frame()
-  if (length(set2test)==2) {
-    data_df <- data_set[ data_set[[set2test[1]]]==1 & data_set[[set2test[1]]] == data_set[[set2test[2]]] & rowSums(data_set)==2,]  
-  } else if (length(set2test)==1) {
-    data_df <- data_set[ data_set[[set2test]]==1 & rowSums(data_set)==1,]  
-  } else {
-    print("ERROR: Option not available")
-  }
-  return(rownames(data_df))
-}
-##----------------------------
-############################
-
-############################
-## Example to create UpsetR plot
-############################
-
-##----------------------------
-## UpsetR from list of items
-##----------------------------
+```R
 
 ## Create example set of lists
 list.1 <- c("a", "b", "c", "d", "e", "f", "g")
@@ -166,22 +81,33 @@ list.of.list <- list(
 ## list and each item: create_upset_data
 df.presence <- create_upset_data(list.of.list)
 df.presence
+```
 
+`df. presence` contains 0/1 for each list and item:
+
+
+
+
+```R
 ## Create plot: create_upset_plot
 ## Use df.presence generated and names for each set
 create_upset_plot(data_set = df.presence, sets = names(df.presence))
-##----------------------------
+```
 
-##----------------------------
-## UpsetR from folder containing files with IDs, genes, names, whatever
-##----------------------------
+<img src="images/example_UpsetR.png" alt="UpsetR example" width="800"/>
+
+
+### 2) UpsetR from folder containing files with IDs, genes, names, whatever
+
+```R
+
 ## Create plot from folder: read files, inherit names from file.names and create upset plot
 ## use function: create_upset
 
 ##----------------------------
-## Save example list generated before
+## Save example list generated before or use other example
 ##----------------------------
-test_upset.folder <- "test_UpsetR"
+test_upset.folder <- "test_UpsetR" ## created in your current working directory
 dir.create(test_upset.folder)
 
 write.table(list.1, file = file.path(test_upset.folder, "list-1.example.txt"), 
@@ -194,14 +120,9 @@ write.table(list.4, file = file.path(test_upset.folder, "list-4.example.txt"),
             row.names = FALSE, quote = FALSE, col.names = FALSE)
 ##----------------------------
 
-##----------------------------
 ## Create:
 # get files with given pattern, create dataframe, create matrix and create plot
 upset_generated <- create_upset(data_dir = test_upset.folder, 
              pattern2search = ".example.txt")
-
-upset_generated$upset_plot$dataset
-upset_generated$upset_plot$plot
-upset_generated$listFiles$`list-1`
 ##----------------------------
-  
+```
