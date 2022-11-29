@@ -80,21 +80,55 @@ list.of.list <- list(
 ## create a matrix/dataframe of presence/absence (0/1) for each
 ## list and each item: create_upset_data
 df.presence <- create_upset_data(list.of.list)
-df.presence
+
 ```
 
-`df. presence` contains 0/1 for each list and item:
+`df.presence` is a dataframe that contains 0/1 for each list and item:
 
+```R
+print(df.presence)
 
+  list.1 list.2 list.3 list.4
+a      1      1      1      1
+b      1      1      1      1
+c      1      1      1      1
+d      1      1      0      0
+e      1      1      0      0
+f      1      0      0      0
+g      1      1      0      1
+h      0      0      1      0
+m      0      0      1      0
+i      0      0      0      1
+j      0      0      0      1
+k      0      0      0      1
+l      0      0      0      1
+```
 
+Now, create the plot:
 
 ```R
 ## Create plot: create_upset_plot
 ## Use df.presence generated and names for each set
-create_upset_plot(data_set = df.presence, sets = names(df.presence))
+upset_plot <- create_upset_plot(data_set = df.presence, sets = names(df.presence))
 ```
 
-<img src="images/example_UpsetR.png" alt="UpsetR example" width="800"/>
+<img src="images/example_UpsetR.png" alt="UpsetR example" width="950"/>
+
+
+To better interpret this plot, check additional details in the UpSet Explained section [here](https://upset.app/). 
+
+Basically, 
+- each row corresponds to a set (a list) and the bar charts on the left show the size of the set (number of items in each set).
+- each colum corresponds to a possible intersection: again, the bar charts, show the size of the intersection.
+- the filled-in cells show which set is part of an intersection. Notice the lines connecting the filled-in cells, as not all sets might be present in an intersection.
+
+As a summary of the results, we can see how
+- list 4 contains 4 items which are unique of list 4.
+- there are 3 items shared by all samples. 
+- list 3 contains 2 items which are unique of list 3.
+- there are 2 items shared between list 2 and list 1
+- list 1 contains 1 item unique of this list,
+- there is a last item, which is shared by 3 sets.
 
 
 ### 2) UpsetR from folder containing files with IDs, genes, names, whatever
@@ -110,6 +144,7 @@ create_upset_plot(data_set = df.presence, sets = names(df.presence))
 test_upset.folder <- "test_UpsetR" ## created in your current working directory
 dir.create(test_upset.folder)
 
+## save the 4 previous list as single files
 write.table(list.1, file = file.path(test_upset.folder, "list-1.example.txt"), 
             row.names = FALSE, quote = FALSE, col.names = FALSE)
 write.table(list.2, file = file.path(test_upset.folder, "list-2.example.txt"), 
@@ -120,9 +155,18 @@ write.table(list.4, file = file.path(test_upset.folder, "list-4.example.txt"),
             row.names = FALSE, quote = FALSE, col.names = FALSE)
 ##----------------------------
 
-## Create:
+## Create all at once:
 # get files with given pattern, create dataframe, create matrix and create plot
-upset_generated <- create_upset(data_dir = test_upset.folder, 
-             pattern2search = ".example.txt")
-##----------------------------
+upset_generated <- create_upset(data_dir = test_upset.folder, pattern2search = ".example.txt")
 ```
+
+The results not shown here is the same plot as before. We set to only retrieve files containing ".example.txt" and creates steps to create plot.
+
+The object `upset_generated`contains several objects:
+```R
+names(upset_generated)
+[1] "upset_plot" "listFiles" 
+```
+
+`upset_generated$upset_plot` contains information of the plot and the dataset (dataframe, the same as `df.presence` before) and `listFiles` contains all the input sets retrieved from files.
+
