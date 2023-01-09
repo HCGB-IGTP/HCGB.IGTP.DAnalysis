@@ -1,6 +1,6 @@
 Package: HCGB.IGTP.DAnalysis
 Title: Useful in-house functions for multiple analysis
-Version: 0.2.2
+Version: 0.2.3
 Authors@R: 
     person(given = "Jose Francisco",
            family = "Sanchez-Herrero",
@@ -26,7 +26,5 @@ Imports:
   RColorBrewer,
   RnBeads,
   tidyr,
-  topGO,
-  UpSetR,
-  ViSEAGO
+  UpSetR
 URL: https://github.com/HCGB-IGTP/HCGB.IGTP.DAnalysis

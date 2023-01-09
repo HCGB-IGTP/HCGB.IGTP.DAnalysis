@@ -574,3 +574,24 @@ filter_signficant_DESEQ <- function(dataF, sign_value = 0.05, LFC=0.26) {
   return(dataFilt)
 }
 
+#' Get results from DESeq2 and normalized data
+#' 
+#' When running DESeq2 you usually require to get all statiscal results and normalized data
+#' @param dds_obj DESeq2 object (DESeqDataSet)
+#' @param coef_n Name of the coefficient obtain from DESeq2::resultsNames(dds_obj))
+#' @param type By default RNA is expected and genes, either EntrezID or ENSEMBL ID is used as ID. You can specify XICRA if miRNA is provided and Gene is the combination of miRNA, variant and isomir (e.g hsa-let-7a-2-3p&iso_add3p:1&iso-23-NLJ18XQZD2). If type XICRA provided, columns is splitted into three new columns (parent, variant and UID)
+#' @export
+get_all_data_DESeq2 <- function(dds_obj, coef_n, type="DESeq2") {
+  #res <- DESeq2::results(dds_object, name = resultsNames(dds_object)[coef_n])
+  res <- DESeq2::results(dds_obj, name = coef_n)
+  
+  ## Merge normalized values and differential expression
+  alldata <- merge(as.data.frame(counts(dds_obj, normalized=TRUE)), as.data.frame(res), by="row.names", sort=FALSE)
+  names(alldata)[1] <- "Gene"
+  
+  if (type=="XICRA") {
+    alldata <- tidyr::separate(alldata, Gene, c('parent', 'variant', 'UID'), sep = '&', remove=FALSE)  
+  }
+  return(alldata)
+}
+

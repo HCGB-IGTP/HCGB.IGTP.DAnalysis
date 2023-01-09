@@ -44,4 +44,58 @@ delete_na <- function(DF, n=0) {
   DF[rowSums(is.na(DF)) <= n,]
 }
 
+#' Convert hg19 <-> hg38 coordinates
+#' 
+#' Using rtracklayer and GenomicRanges, this function converts hg19 <-> hg38 coordinates
+#' @param df2convert Coordinate Dataframe provided to convert to GenomicRanges
+#' @param folderWithLiftoverInfo Folder containing liftover chain information retrieved from UCSC website
+#' @param hg19ToHg38 Boolean to transfrom hg19 to hg38
+#' @param hg38ToHg19 Boolean to transfrom hg38 to hg19
+#' @export
 
+litfover_func <- function(df2convert, folderWithLiftoverInfo, hg19ToHg38=FALSE, hg38ToHg19=FALSE) {
+  library(rtracklayer)
+  library(GenomicRanges)
+  
+  ## create GRanges
+  df2convert.GR <- GenomicRanges::makeGRangesFromDataFrame(df = df2convert)
+  
+  ## Check info:
+  if (hg19ToHg38) {
+    chain=import.chain(file.path(folderWithLiftoverInfo, "hg19ToHg38.over.chain")) # file downloaded from UCSC
+  } else if (hg38ToHg19) {
+    chain=import.chain(file.path(folderWithLiftoverInfo, "hg38ToHg19.over.chain")) # file downloaded from UCSC
+  } else {
+    print("ERROR: No option provided")
+  }
+  
+  ## convert
+  newLocs=liftOver(x = df2convert.GR, chain = chain)
+  newLocsDF=data.frame(newLocs)
+  
+  ## check if there are some duplicates
+  #rownames(newLocsDF) <- newLocsDF$group_name
+  n_occur <- data.frame(table(newLocsDF$group_name))
+  #df2convert.GR[n_occur[n_occur$Freq > 1,]$Var1,]
+  #subset(newLocsDF, group_name %in% n_occur[n_occur$Freq > 1,]$Var1)
+  
+  rownames(newLocsDF) <- paste(newLocsDF$group_name, ave(newLocsDF$group_name, newLocsDF$group_name, 
+                                                         FUN=function(i) seq(length(i))), sep='.')
+  #subset(newLocsDF, group_name %in% n_occur[n_occur$Freq > 1,]$Var1)
+  
+  ##
+  if (hg19ToHg38) {
+    df2convert = data.frame(df2convert,"start.hg19"=df2convert$GeneStart)
+    df2convert = data.frame(df2convert,"end.hg19"=df2convert$GeneEnd)
+    df2convert[newLocsDF$group_name,"start.hg38"]=newLocsDF[,"start"]
+    df2convert[newLocsDF$group_name,"end.hg38"]=newLocsDF[,"end"]
+  } else if (hg38ToHg19) {
+    df2convert = data.frame(df2convert,"start.hg38"=df2convert$GeneStart)
+    df2convert = data.frame(df2convert,"end.hg38"=df2convert$GeneEnd)
+    df2convert[newLocsDF$group_name,"start.hg19"]=newLocsDF[,"start"]
+    df2convert[newLocsDF$group_name,"end.hg19"]=newLocsDF[,"end"]
+  }
+  
+  
+  return(df2convert)
+}
