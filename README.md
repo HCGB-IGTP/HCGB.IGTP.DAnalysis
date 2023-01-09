@@ -10,6 +10,14 @@ install.packages("devtools")
 devtools::install_github("HCGB-IGTP/HCGB.IGTP.Danalysis")
 ```
 
+## Code Example
+
+There is a set of code examples to execute some of functions available here.
+
+See an example of Upset plot [here](code_example/example_UpsetR.md)
+
+
+
 ## License 
 
 MIT License
