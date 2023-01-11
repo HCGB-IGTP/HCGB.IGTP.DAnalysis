@@ -15,11 +15,13 @@ plot_genes(
 \arguments{
 \item{data_frame_given}{Dataframe with information from differential_methylation_data/diffMethTable_region_genes...}
 
-\item{name_given}{}
+\item{name_given}{name to use}
 
 \item{sample.grouping}{rnb.sample.groups output grouping samples}
 
 \item{out_folder}{Folder to store pdfs}
+
+\item{RnBeads_object}{RnBeads object}
 }
 \description{
 This functions calls locus_plotter (rnb.plot.locus.profile caller) for each entry in a dataframe

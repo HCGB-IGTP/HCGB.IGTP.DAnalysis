@@ -256,7 +256,7 @@ my_volcanoplot_sites <- function (res, lfcthresh=2, sigthresh=0.05, main="Volcan
 #' RnBeads Locus plotter caller
 #'
 #' This functions calls rnb.plot.locus.profile for a gene or region of interest
-#' @param RnBeads_object
+#' @param RnBeads_object RnBeads object
 #' @param grouping_class rnb.sample.groups output grouping samples
 #' @param gene_name Name of the gene/region to create pdf
 #' @param comparison Name to add to create pdf
@@ -279,8 +279,8 @@ locus_plotter <- function(RnBeads_object, grouping_class, gene_name, comparison,
 #'
 #' This functions calls locus_plotter (rnb.plot.locus.profile caller) for each entry in a dataframe
 #' @param data_frame_given Dataframe with information from differential_methylation_data/diffMethTable_region_genes...
-#' @param name_given 
-#' @param RnBeads_object
+#' @param name_given name to use
+#' @param RnBeads_object RnBeads object
 #' @param sample.grouping rnb.sample.groups output grouping samples
 #' @param out_folder Folder to store pdfs
 #' @export

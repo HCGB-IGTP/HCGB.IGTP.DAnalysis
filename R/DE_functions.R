@@ -48,7 +48,7 @@ volcanoplot <- function (res, lfcthresh=2, sigthresh=0.05, main="Volcano Plot", 
 #'
 #' This functions prepares countsfile for DESeq discarding rows with
 #' many 0 for all samples. It uses the given cutoff, to discard rows containing
-#' >cutoff (%) of 0's. Default cutoff value is 0.9
+#' greater than a cutoff in percentage of 0's. Default cutoff value is 0.9
 #' @param countsF Count file for DESeq
 #' @param cutoff Cutoff for discarding rows
 #' @export
@@ -355,8 +355,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "rld" = rld,
     "vsd" = vsd,
     "volcan_plot" = volcan_plot,
-    "dds_object" = dds_object,
-    "res_filtered" = res_filtered
+    "dds_object" = dds_object
   )
   
   

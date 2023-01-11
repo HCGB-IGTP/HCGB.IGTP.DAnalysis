@@ -13,5 +13,6 @@ discard_0_counts(countsF, cutoff = 0.9)
 }
 \description{
 This functions prepares countsfile for DESeq discarding rows with
-many 0 for all samples. It uses the given cutoff, to discard rows containingcutoff (\%) of 0's. Default cutoff value is 0.9
+many 0 for all samples. It uses the given cutoff, to discard rows containing
+greater than a cutoff in percentage of 0's. Default cutoff value is 0.9
 }

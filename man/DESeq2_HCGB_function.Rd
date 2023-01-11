@@ -7,7 +7,8 @@
 DESeq2_HCGB_function(
   dds_object,
   coef_n,
-  name,
+  comp_name,
+  comp_ID = "comp1",
   numerator = "example1",
   denominator = "example2",
   OUTPUT_Data_dir,
@@ -20,8 +21,6 @@ DESeq2_HCGB_function(
 
 \item{coef_n}{Coefficient number obtain using resultsName(dds)}
 
-\item{name}{Name of the comparison}
-
 \item{numerator}{Name of the numerator comparison}
 
 \item{denominator}{Name of the denominator comparison}
@@ -31,6 +30,8 @@ DESeq2_HCGB_function(
 \item{df_treatment_Ind}{Dataframe containing additional information for each sample}
 
 \item{threads}{Number of CPUs to use \link{Default: 2}.}
+
+\item{name}{Name of the comparison}
 }
 \description{
 This functions plots pvalues original and after filtering

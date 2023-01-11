@@ -16,6 +16,8 @@ locus_plotter(
 )
 }
 \arguments{
+\item{RnBeads_object}{RnBeads object}
+
 \item{grouping_class}{rnb.sample.groups output grouping samples}
 
 \item{gene_name}{Name of the gene/region to create pdf}

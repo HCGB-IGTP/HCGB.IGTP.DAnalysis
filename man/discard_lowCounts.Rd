@@ -2,7 +2,8 @@
 % Please edit documentation in R/DE_functions.R
 \name{discard_lowCounts}
 \alias{discard_lowCounts}
-\title{Discard low count in a dds object}
+\title{This functions discard low counts in a DESeq object.
+Uses 10 as default.}
 \usage{
 discard_lowCounts(dds_object, min_count = 10)
 }
