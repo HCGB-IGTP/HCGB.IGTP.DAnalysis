@@ -12,7 +12,6 @@ maplot <- function (res, thresh=0.05, textcex=1, ...) {
   with(subset(res, padj<thresh), points(baseMean, log2FoldChange, col="red", pch=20, cex=1.5))
 }
 
-#' Discard low count in a dds object
 #'
 #' This functions discard low counts in a DESeq object.
 #' Uses 10 as default.
@@ -111,9 +110,9 @@ discard_lowCounts_df = function(df_given, min_count=10) {
 #' @param threads Number of CPUs to use [Default: 2].
 #' @export
 
-DESeq2_HCGB_function = function(dds_object, coef_n, name, 
-                                     numerator="example1", denominator="example2", 
-                                     OUTPUT_Data_dir, df_treatment_Ind, threads=2) {
+DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
+                                numerator="example1", denominator="example2", 
+                                OUTPUT_Data_dir, df_treatment_Ind, threads=2) {
   
   
   library(DESeq2)
@@ -124,7 +123,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   library(ggrepel)
   
   ## set name
-  file_name <- paste0(name, "_", numerator, "_vs_", denominator)
+  file_name <- paste0(comp_ID, "_", comp_name, "_", numerator, "_vs_", denominator)
   
   ## start
   print (paste0("## Starting: ", file_name))
@@ -153,7 +152,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   ### Plot p-values
   ######################################################################
   ## original/filtered
-  Pvalues_pdf <- file.path(OUTPUT_Data_sample, paste0(name,"_", numerator, "_vs_", denominator," p-value_distribution.pdf"))
+  Pvalues_pdf <- file.path(OUTPUT_Data_sample, paste0(comp_name,"_", numerator, "_vs_", denominator," p-value_distribution.pdf"))
   HCGB.IGTP.DAnalysis::plot_DESeq2_pvalues(Pvalues_pdf, res, res_filtered)
   
   ######################################################################
@@ -174,7 +173,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   alldata <- merge(as.data.frame(counts(dds_object, normalized=TRUE)), as.data.frame(res_filtered), by="row.names", sort=FALSE)
   names(alldata)[1] <- "Gene"
   ## Write results
-  write.table(alldata, file=file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_NormValues-and-DE_table.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
+  write.table(alldata, file=file.path(OUTPUT_Data_sample, 
+                                      paste0(file_name, "-ResultsCounting_NormValues-and-DE_table.txt")), sep="\t", 
+              row.names=T, col.names=NA, quote=T)
   
   ##get significant data only with counts in all samples
   ##get significant data only padj < 0.05 and log2FoldChange >1.2
@@ -185,14 +186,22 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   row.names(sign.data) <- sign.data$Gene
   
   # Results table in the same order than counting table
-  write.table(sign.data, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_table_SignificantDE.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
+  write.table(sign.data, file.path(OUTPUT_Data_sample, 
+                                   paste0(file_name, "-ResultsCounting_table_SignificantDE.txt")), 
+              sep="\t", row.names=T, col.names=NA, quote=TRUE)
   
   ## check if it is worth to continue, avoid error if missing sign.data
   print(length(rownames(sign.data)))
-  if (length(rownames(sign.data)) > 2) {
-    print("continue")
-  } else {
-    return(alldata)
+  if (length(rownames(sign.data)) < 2) {
+    
+    data2return <- list(
+      "alldata" = alldata,
+      "dds_object" = dds_object,
+      "res_filtered" = res_filtered
+    )
+    
+    #####
+    return(data2return)
   }
   
   ######################################################################
@@ -258,15 +267,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   select <- rownames(sign.data)[1:50]
   select <- select[!is.na(select)] ## discard NA values
   
-  
-  print(name)
-  print(numerator)
-  print(denominator)
-  
-  listOfSampls <- c(rownames(df_treatment_Ind[ df_treatment_Ind[as.character(name)]==as.character(numerator),]),
-                    rownames(df_treatment_Ind[ df_treatment_Ind[as.character(name)]==as.character(denominator),])
-  )
-  
+  ## Samples
+  print("Samples: ")
+  listOfSampls <- rownames(colData(dds_object))
   print(listOfSampls)
   
   if ( length(select) > 5 ) {
@@ -322,23 +325,23 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   }
   
   ## Add PCA for all significant results
-  min_r <- length(colnames(sign.data))-4
-  #data2pca <- t(sign.data[,-c(1,min_r:length(colnames(sign.data)))]) # do not use neither gene names or DESeq
-  data2pca <- t(sign.data[,rownames(df_treatment_Ind)])
-  pca_res <- stats::prcomp(as.matrix(data2pca), scale=TRUE)
-  
-  ## only samples included
-  data2pca2 <- t(sign.data[listOfSampls,rownames(df_treatment_Ind)])
+  data2pca <- t(sign.data[,listOfSampls])
+  pca_res <- stats::prcomp(as.matrix(data2pca))
   
   pdf(file.path(OUTPUT_Data_sample,"PCA_multiple.pdf"))
   for (i in colnames(df_treatment_Ind)) {
     p<-autoplot(pca_res, 
-                #frame=TRUE, frame.type="norm",
-                data=df_treatment_Ind, colour=i) + theme_classic() + ggtitle(paste0("Variable: ", i )) 
-    ##+ geom_label_repel(aes(label=row.names(df_treatment_Ind)), max.overlaps = 500)
-    
+                data=df_treatment_Ind[listOfSampls,], colour=i) + 
+      theme_classic() + ggtitle(paste0("Variable: ", i )) 
     print(p)
   }
+  
+  p<-autoplot(pca_res,
+              data=df_treatment_Ind[listOfSampls,], colour=i) + 
+    geom_text(label=listOfSampls) + 
+    theme_classic() + ggtitle(paste0("Variable: ", i )) 
+  print(p)
+  
   dev.off()
   
   ######################################################################
@@ -346,9 +349,21 @@ DESeq2_HCGB_function = function(dds_object, coef_n, name,
   print(file_name)
   ######################################################################
   
+  data2return <- list(
+    "alldata" = alldata,
+    "data2pca" = data2pca,
+    "rld" = rld,
+    "vsd" = vsd,
+    "volcan_plot" = volcan_plot,
+    "dds_object" = dds_object,
+    "res_filtered" = res_filtered
+  )
+  
+  
   #####
-  return(alldata)
+  return(data2return)
 }
+
 
 #' Plot batch effect
 #'
