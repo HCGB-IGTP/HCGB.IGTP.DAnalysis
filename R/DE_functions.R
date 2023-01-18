@@ -197,6 +197,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     data2return <- list(
       "alldata" = alldata,
       "dds_object" = dds_object,
+      "res"=res,
       "res_filtered" = res_filtered
     )
     
@@ -207,9 +208,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   ######################################################################
   ## ma plot
   ######################################################################
-  jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-maplot.jpeg")), 1500, 1000, pointsize=20)
-  plot_main_title <- paste0("MA Plot: ", numerator, " vs ", denominator)
-  HCGB.IGTP.DAnalysis::maplot(res = alldata, main=plot_main_title)
+  pdf(file.path(OUTPUT_Data_sample, "DiffExpression-maplot.jpeg"))
+  plotMA(res_filtered)
   dev.off()
   
   ######################################################################
@@ -218,7 +218,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   #jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-volcano-plot.jpeg")), 1500, 1000, pointsize=20)
   volcano_main_title <- paste0("Volcano Plot: ", numerator, " vs ", denominator)
   volcan_plot <- EnhancedVolcano::EnhancedVolcano(alldata, x="log2FoldChange", y="padj", lab="",
-                                                  pCutoff=0.05, FCcutoff=1.2, pointSize=3, labSize=6) + 
+                                                  pCutoff=0.05, FCcutoff=log2(1.2), pointSize=3, labSize=6) + 
     ggplot2::scale_x_continuous() + ggplot2::labs(title = volcano_main_title)
   
   HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
@@ -355,13 +355,16 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "rld" = rld,
     "vsd" = vsd,
     "volcan_plot" = volcan_plot,
-    "dds_object" = dds_object
+    "dds_object" = dds_object,
+    "res"=res,
+    "res_filtered"=res_filtered
   )
   
   
   #####
   return(data2return)
 }
+
 
 
 #' Plot batch effect
@@ -491,6 +494,7 @@ plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_fold
 #' When running DESeq2 you usually get names from resultsNames() such as var_comp1_vs_comp2 e.g. Sex_male_vs_female. This functions returns the name of the variables and the comparison studied.
 #' @param str_given A string with the comparison. E.g. Sex_male_vs_female
 #' @export
+
 get_comparison_resultsNames <- function(str_given) {
   list_produced <- unlist(strsplit(str_given, split="_")) 
   
@@ -500,27 +504,39 @@ get_comparison_resultsNames <- function(str_given) {
     "cmp2" = NULL
   )
   
-  if (list_produced[3] == "vs") {
-    # category comp1 vs comp2
-    str2return$category = list_produced[1]
-    str2return$cmp1 = list_produced[2]
-    str2return$cmp2 = list_produced[4]
-  } else {
-    vs_index <- as.numeric(match("vs", list_produced))
-    len_given <- length(list_produced[vs_index:length(list_produced)])
-    if (len_given == 2) {
-      str2return$category = paste0(list_produced[1], "_", list_produced[2])
-      str2return$cmp1 = list_produced[3]
-      str2return$cmp2 = list_produced[5]
-    } else if (len_given == 3) {
+  if ("vs" %in% list_produced) {
+    if (list_produced[3] == "vs") {
+      # category comp1 vs comp2
       str2return$category = list_produced[1]
-      str2return$cmp1 = paste0(list_produced[2], "_", list_produced[3])
-      str2return$cmp2 = paste0(list_produced[5], "_", list_produced[6])
+      str2return$cmp1 = list_produced[2]
+      str2return$cmp2 = list_produced[4]
+    } else {
+      vs_index <- as.numeric(match("vs", list_produced))
+      len_given <- length(list_produced[vs_index:length(list_produced)])
+      if (len_given == 2) {
+        str2return$category = paste0(list_produced[1], "_", list_produced[2])
+        str2return$cmp1 = list_produced[3]
+        str2return$cmp2 = list_produced[5]
+      } else if (len_given == 3) {
+        str2return$category = list_produced[1]
+        str2return$cmp1 = paste0(list_produced[2], "_", list_produced[3])
+        str2return$cmp2 = paste0(list_produced[5], "_", list_produced[6])
+      }
     }
+  } else {
+    print("Interaction term selected:")
+    print(str_given)
+    
+    str2return$category = "interaction"
+    str2return$cmp1 = str_given
+    str2return$cmp2 = "reference"
+    
   }
   
   return(str2return)
 }
+
+
 
 #' Relevel and rung DESEQ2 analysis
 #' 
