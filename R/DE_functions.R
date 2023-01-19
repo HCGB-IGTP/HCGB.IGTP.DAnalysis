@@ -366,7 +366,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
 }
 
 
-
 #' Plot batch effect
 #'
 #' This functions plots original PCA and batch corrected given two variables and a putative batch variable
@@ -494,7 +493,6 @@ plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_fold
 #' When running DESeq2 you usually get names from resultsNames() such as var_comp1_vs_comp2 e.g. Sex_male_vs_female. This functions returns the name of the variables and the comparison studied.
 #' @param str_given A string with the comparison. E.g. Sex_male_vs_female
 #' @export
-
 get_comparison_resultsNames <- function(str_given) {
   list_produced <- unlist(strsplit(str_given, split="_")) 
   
@@ -535,7 +533,6 @@ get_comparison_resultsNames <- function(str_given) {
   
   return(str2return)
 }
-
 
 
 #' Relevel and rung DESEQ2 analysis
@@ -600,7 +597,8 @@ filter_signficant_DESEQ <- function(dataF, sign_value = 0.05, LFC=0.26) {
   
   #log2FoldChange
   #padj
-  dataFilt <- dataF[abs(dataF$log2FoldChange)>0.26 & dataF$padj<0.05,]
+  dataFilt <- subset(dataF, abs(log2FoldChange)>LFC & padj<sign_value)
+  dataFilt <- dataFilt[order(dataFilt$padj),]
   return(dataFilt)
 }
 
