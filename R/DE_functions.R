@@ -941,7 +941,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
   plots2return <- list(
     "plotDisp" = plotDisp,
     "top50heatmap" = top50heatmap,
-    "phylo_plot" = phylo_plot,
+    #"phylo_plot" = phylo_plot,
     "sampleDist" = sampleDist,
     "PCA" = list(
       "PCA_data" = PCA_data,
