@@ -349,6 +349,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   print(file_name)
   ######################################################################
   
+  sign.df <- filter_signficant_DESEQ(alldata)
+  
   data2return <- list(
     "alldata" = alldata,
     "data2pca" = data2pca,
@@ -356,8 +358,11 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "vsd" = vsd,
     "volcan_plot" = volcan_plot,
     "dds_object" = dds_object,
-    "res"=res,
-    "res_filtered"=res_filtered
+    #"res"=res,
+    "res_filtered"=res_filtered,
+    "sign.df"=sign.df,
+    "sign.genes"=sign.df$Gene,
+    "sign.count"=length(sign.df$Gene)
   )
   
   
