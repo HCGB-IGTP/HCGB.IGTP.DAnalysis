@@ -628,3 +628,328 @@ get_all_data_DESeq2 <- function(dds_obj, coef_n, type="DESeq2") {
   return(alldata)
 }
 
+
+#' Check the effect of reducing one term from a DESEQ2 design
+#' 
+#' Check reducing effect using LRT method.
+#' @param dds_obj.given DESeq2 object (DESeqDataSet)
+#' @param formula_given Formula to substract for formula in dds_obj.given
+#' @param comp.folder.given Absolute path to store results
+#' @param compID.given Tag name to include for each comparison
+#' @param dfAnnotation.given Dataframe with useful metadata to include
+#' @export
+check_reduced_LRT <- function(dds_obj.given, formula_given, 
+                              comp.folder.given, compID.given, dfAnnotation.given) {
+  
+  ## LRT: Check reduction
+  DEseq.red <- DESeq2::DESeq(object = dds_obj.given, test="LRT", 
+                             reduced=as.formula(formula_given))
+  
+  print(length(resultsNames(DEseq.red)))
+  term2use <- tail(resultsNames(DEseq.red), 1)
+  print(term2use)
+  
+  Resultsnames2use <- HCGB.IGTP.DAnalysis::get_comparison_resultsNames(term2use)
+  print(Resultsnames2use)
+  
+  ## get for all 
+  DEseq.red.res <- get_Results_DDS(dds_object = DEseq.red, 
+                                   OUTPUT_Data_dir_given = comp.folder.given, 
+                                   comp_ID = compID.given,
+                                   dfAnnotation = dfAnnotation.given)
+  
+  return(DEseq.red.res)
+}
+
+#' Check the effect of variables in matrix design
+#' 
+#' When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
+#' @param sampleSheet.given Samplesheet containing metadata information
+#' @param countsGiven Dataframe/matrix of counts
+#' @param list.terms List of terms from samplesheet to include in design matrix
+#' @param red.formula.given Design formula to use as naive and in reduction
+#' @param compID.given Tag name to include for each comparison
+#' @param dfAnnotation.given Dataframe with useful metadata to include
+#' @param comp.folder.given Absolute path to store results
+#' @export
+check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.formula.given, 
+                               compID.given, dfAnnotation.given, comp.folder.given) {
+  
+  resulst_list <- list()
+  
+  ##--------------------------
+  ## naive
+  ##--------------------------
+  print("++++++++++++++++++++++++++++")
+  print("Naive")
+  print("++++++++++++++++++++++++++++")
+  print("Formula: ")
+  print(paste0("~", red.formula.given))
+  
+  naive_res <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+                              count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
+                              int_threads = 2, dfAnnotation = dfAnnotation.given, 
+                              formula_given = as.formula(paste0("~", red.formula.given)), 
+                              early_return = FALSE, comp_ID = paste0(compID.given, ".naive"))
+  
+  resulst_list[[red.formula.given]] = naive_res
+  
+  print("##################")
+  ##--------------------------
+  
+  ##--------------------------
+  ## add terms: addition
+  ##--------------------------
+  print("++++++++++++++++++++++++++++")
+  print("Test addition")
+  print("++++++++++++++++++++++++++++")
+  
+  for (term in list.terms) {
+    print("Testing the effect of:")
+    print(term)
+    print("Formula: ")
+    print(paste0("~", term, "+", red.formula.given))
+    
+    comp_ID.here <- paste0(compID.given, ".", term)
+    
+    this.term.res <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+                                    count_table = countsGiven, 
+                                    sample_sheet_given = sampleSheet.given, 
+                                    int_threads = 2, 
+                                    dfAnnotation = dfAnnotation.given, 
+                                    formula_given = as.formula(paste0("~", term, "+", red.formula.given)), 
+                                    early_return = FALSE, 
+                                    comp_ID = comp_ID.here)
+    
+    resulst_list[[term]] = this.term.res
+    
+    print("##################")
+    
+    print("Testing the effect of reducing:")
+    print(term)
+    print("Formula: ")
+    print(paste0("~", term, "+", red.formula.given, " vs. ~", red.formula.given))
+    
+    
+    ## Check reduction
+    
+    resulst_list[[paste0(term, ".red")]] = check_reduced_LRT(dds_obj.given = this.term.res$dds_obj, 
+                                                             formula_given = as.formula(paste0("~", red.formula.given)),
+                                                             comp.folder.given = comp.folder.given, compID.given = paste0(comp_ID.here, ".red"), 
+                                                             dfAnnotation.given = dfAnnotation.given)
+    
+  }
+  ##--------------------------
+  
+  ##--------------------------
+  ## complex
+  ##--------------------------
+  ##
+  print("++++++++++++++++++++++++++++")
+  print("Complex:")
+  print("++++++++++++++++++++++++++++")
+  
+  print("Formula: ")
+  print(paste0("~", paste(list.terms, "+ ", collapse = ""), red.formula.given))
+  
+  resulst_list[["complex"]] = analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+                                             count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
+                                             int_threads = 2, dfAnnotation = dfAnnotation.given, 
+                                             formula_given = as.formula(paste0("~", paste(list.terms, "+ ", collapse = ""), red.formula.given)), 
+                                             early_return = FALSE, 
+                                             comp_ID = paste0(compID.given, ".complex"))
+  
+  ##--------------------------
+  
+  print("##################")
+  
+  ##
+  
+  return(resulst_list)
+}
+
+
+#' DESEQ2 analysis pipeline
+#' 
+#' When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
+#' @param sample_sheet_given Samplesheet containing metadata information
+#' @param count_table Dataframe/matrix of counts
+#' @param OUTPUT_Data_dir_given Absolute path to store results
+#' @param dfAnnotation Dataframe with useful metadata to include
+#' @param int_threads Number of threads to use
+#' @param formula_given Design formula to use
+#' @param coef_n Number of the coefficient of results to test
+#' @param early_return Whether to return exploratory results early or not
+#' @param comp_ID Tag name to include for each comparison
+#' @export
+analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
+                           dfAnnotation, int_threads, formula_given, 
+                           coef_n=NA, early_return=FALSE, comp_ID=NULL) {
+  
+  dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
+  
+  #############
+  ## Create list object for DESeq: remove 0 values
+  #############
+  data_DESeq <- list(
+    "counts"=HCGB.IGTP.DAnalysis::discard_0_counts(countsF = count_table),
+    "target"=sample_sheet_given
+  )
+  data_DESeq <- HCGB.IGTP.DAnalysis::adjust_samples(data_DESeq$counts, data_DESeq$target)
+  
+  
+  ## Set parallel threads
+  print (paste0("Set Multicore: ", int_threads))
+  register(MulticoreParam(int_threads))
+  #############
+  
+  #############
+  ## Design ###
+  #############
+  ddsFullCountTable <- DESeq2::DESeqDataSetFromMatrix(
+    countData = data_DESeq$counts,
+    colData = data_DESeq$target, design = as.formula(formula_given) )
+  
+  dds_object <- DESeq2::DESeq(ddsFullCountTable, parallel = TRUE)
+  
+  
+  ## check
+  print("resultsNames(dds_object)")
+  print(resultsNames(dds_object))
+  
+  #############
+  ## exploratory dds_object
+  #############
+  print("Exploratory plots")
+  exploratory_plots_dir <- file.path(OUTPUT_Data_dir_given, paste0(comp_ID, "_exploratory_plots"))
+  dir.create(exploratory_plots_dir, showWarnings = FALSE)
+  
+  print(dim(sample_sheet_given))
+  
+  exploratory_plots_returned <- exploratory_plots(dds_object.exp = dds_object, 
+                                                  OUTPUT_dir = exploratory_plots_dir, 
+                                                  dfAnnotation_df = sample_sheet_given, 
+                                                  list_of_cols = colnames(dfAnnotation))
+  print('Out Exploratory plots')
+  #############
+  
+  if (early_return) {
+    return(list("dds_object"=dds_object, 
+                "exploratory_plots" = exploratory_plots_returned,
+                "resultsNames" = resultsNames(dds_object)
+    ))
+  }
+  #############
+  
+  ###########
+  # Get results
+  #############
+  results_list = get_Results_DDS(dds_object = dds_object, 
+                                 OUTPUT_Data_dir_given = OUTPUT_Data_dir_given, 
+                                 dfAnnotation = dfAnnotation, comp_ID = comp_ID, 
+                                 int_threads = int_threads, coef_n = coef_n)
+  #############
+  
+  #############
+  ## Init data to return
+  #############
+  data2return <- list(
+    "dds_obj" = dds_object,
+    "exploratory_plots" = exploratory_plots_returned,
+    "resultsNames" = resultsNames(dds_object),
+    "dataDESeq" = data_DESeq,
+    "formula" = formula_given,
+    "results" = results_list
+  )
+  
+  return(data2return)
+}
+
+#' Exploratory plots for DESEQ2 analysis
+#' 
+#' When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
+#' @param dds_object.exp DESeq2 object (DESeqDataSet)
+#' @param OUTPUT_dir
+#' @param dfAnnotation_df
+#' @param list_of_cols
+
+exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_of_cols){
+  ############################
+  # Exploratory plots 
+  ############################
+  
+  print('Inside exploratory plots')
+  
+  # Dispersion plot 
+  plotDisp <- plotDispEsts(dds_object.exp)
+  jpeg(file.path(OUTPUT_dir, "general_dispersion_plot.jpeg"))
+  print(plotDisp)
+  dev.off()
+  
+  # Top 50 genes:
+  select <- order(rowMeans(counts(dds_object.exp,normalized=TRUE)),decreasing=TRUE)[1:50]
+  vsd <- varianceStabilizingTransformation(dds_object.exp, blind = FALSE)
+  
+  top50heatmap <- pheatmap(assay(vsd)[select,], annotation = dfAnnotation_df[,list_of_cols])
+  save_pdf(folder_path = OUTPUT_dir, name_file = "top50_heatmap",
+           plot_given = top50heatmap)
+  
+  ## ape library
+  # Clustering:
+  # Get sample-to-sample distances
+  distsRL <- dist(t(assay(vsd)))
+  hc <- hclust(distsRL, method="average")
+  
+  # Clustering:
+  ## ape library
+  #pdf(file.path(OUTPUT_dir,"clustering.pdf"))
+  #phylo_plot <- plot.phylo(as.phylo(hc), 
+  #                         tip.color = HCGB.IGTP.DAnalysis::create_col_palette(dfAnnotation_df$condition, 
+  #                                                                             levels(dfAnnotation_df$condition), 
+  #                                                                             palette_given = "Set1"),
+  #                         direction = "downwards", 
+  #                         srt = 180, adj = 1, 
+  #                         main=paste("Correlation-based clustering"),)
+  #dev.off()
+  
+  # Get sample-to-sample distances
+  distsRL <- dist(t(assay(vsd)))
+  mat <- as.matrix(distsRL)
+  sampleDist <- pheatmap(mat, annotation = dfAnnotation_df[,list_of_cols])
+  save_pdf(folder_path = OUTPUT_dir, name_file = "heatmap_samplesDistance",
+           plot_given = sampleDist)
+  # 
+  # ## PCA
+  pdf(file.path(OUTPUT_dir,"PCA_multiple.pdf"), paper = "A4r", width = 35, height = 12)
+  list_pca <- list()
+  for (gr in list_of_cols) {
+    plt_pca <- plotPCA(vsd, intgroup=gr) + ggtitle(gr) + 
+      ggrepel::geom_text_repel(label=rownames(dfAnnotation_df)) + theme_classic()
+    list_pca[[gr]] <- plt_pca
+    print(plt_pca)
+  }
+  dev.off()
+  # 
+  
+  PCA_data <- plotPCA(vsd, returnData=TRUE)
+  
+  ### cooks distance
+  df.cooks <- as.data.frame(log10(assays(dds_object.exp)[["cooks"]])) %>% melt()
+  
+  ## return
+  plots2return <- list(
+    "plotDisp" = plotDisp,
+    "top50heatmap" = top50heatmap,
+    "phylo_plot" = phylo_plot,
+    "sampleDist" = sampleDist,
+    "PCA" = list(
+      "PCA_data" = PCA_data,
+      "PCA_list" = list_pca
+    ),
+    "cooks.data" = df.cooks
+  )
+  
+  return(plots2return)
+  
+}
+
