@@ -121,6 +121,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   library(BiocParallel)
   library(ggfortify)
   library(ggrepel)
+  library(pheatmap)
   
   ## set name
   file_name <- paste0(comp_ID, "_", comp_name, "_", numerator, "_vs_", denominator)
