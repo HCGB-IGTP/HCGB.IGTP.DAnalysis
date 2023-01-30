@@ -779,7 +779,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param dfAnnotation Dataframe with useful metadata to include
 #' @param int_threads Number of threads to use
 #' @param formula_given Design formula to use
-#' @param coef_n Number of the coefficient of results to test
+#' @param coef_n Number of the coefficient of results to test [if desired]
 #' @param early_return Whether to return exploratory results early or not
 #' @param comp_ID Tag name to include for each comparison
 #' @export
@@ -870,9 +870,9 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
 #' 
 #' When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
 #' @param dds_object.exp DESeq2 object (DESeqDataSet)
-#' @param OUTPUT_dir
-#' @param dfAnnotation_df
-#' @param list_of_cols
+#' @param OUTPUT_dir Absolute path to store results
+#' @param dfAnnotation_df Dataframe with useful metadata to include
+#' @param list_of_cols List of columns of interest to subset from metadata
 
 exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_of_cols){
   ############################
@@ -952,5 +952,63 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
   
   return(plots2return)
   
+}
+
+
+#' Generate results given a DDS object
+#' 
+#' When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
+#' @param dds_object DESeq2 object (DESeqDataSet)
+#' @param OUTPUT_Data_dir_given Absolute path to store results
+#' @param dfAnnotation Dataframe with useful metadata to include
+#' @param comp_ID Tag name to include for each comparison
+#' @param int_threads Number of threads to use in the analysis
+#' @param coef_n Number of the coefficient of results to test [if desired]
+
+get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, comp_ID,
+                            int_threads=2, coef_n=NA) {
+  ###########
+  # Get results
+  #############
+  
+  results_list <- list()
+  if (is.numeric(coef_n)) {
+    listNames <- HCGB.IGTP.DAnalysis::get_comparison_resultsNames(resultsNames(dds_object)[coef_n])
+    print(listNames)
+    print(paste0(" + Analysis for coefficient given: ", as.character(coef_n)))
+    res_dds = HCGB.IGTP.DAnalysis::DESeq2_HCGB_function(
+      dds_object = dds_object, coef_n = coef_n, comp_name = listNames[1], comp_ID = comp_ID,
+      numerator = listNames[2], denominator = listNames[3],
+      OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
+      threads = as.numeric(int_threads))
+    
+    ## save to return
+    coef_name = as.character(resultsNames(dds_object)[coef_n])
+    results_list[[coef_name]] = res_dds
+    
+  } else {
+    
+    for (coef_name in resultsNames(dds_object)) {
+      if (coef_name=="Intercept") {} else {
+        print(paste0(" + Analysis for coefficient: ", coef_name))
+        listNames <- HCGB.IGTP.DAnalysis::get_comparison_resultsNames(coef_name)
+        
+        print(listNames)
+        
+        res_dds = HCGB.IGTP.DAnalysis::DESeq2_HCGB_function(
+          dds_object = dds_object, coef_n = coef_name, comp_ID = comp_ID,
+          comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
+          OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
+          threads = as.numeric(int_threads))
+        
+        ## save results
+        results_list[[coef_name]] = res_dds
+      }
+    }
+    
+  }
+  #############
+  
+  return(results_list)
 }
 
