@@ -367,7 +367,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   )
   
   ## dump in disk RData
-  save(data2return, file=file.path(OUTPUT_Data_dir, "data2return.RData"))
+  save(data2return, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
   
   
   #####
