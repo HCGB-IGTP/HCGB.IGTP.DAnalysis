@@ -112,7 +112,7 @@ discard_lowCounts_df = function(df_given, min_count=10) {
 
 DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
-                                OUTPUT_Data_dir, df_treatment_Ind, threads=2) {
+                                OUTPUT_Data_dir, df_treatment_Ind, threads=2, forceResults=FALSE) {
   
   
   library(DESeq2)
@@ -128,7 +128,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   
   ## start
   print (paste0("## Starting: ", file_name))
-  
+
   ## Set parallel threads
   print (paste0("Set Multicore: ", as.numeric(threads)))
   register(MulticoreParam(as.numeric(threads)))
@@ -137,7 +137,19 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   OUTPUT_Data_sample = file.path(OUTPUT_Data_dir, file_name)
   print (paste0("Create folder: ", OUTPUT_Data_sample))
   dir.create(OUTPUT_Data_sample)
+
+  if (forceResults) {
+    
+  } else {
+    ## check if previously done
+    if (file.exists(file.path(OUTPUT_Data_sample, "data2return.RData"))) {
+      print("Data already available in:")
+      print(OUTPUT_Data_sample)
+      return()
+    }
+  }
   
+    
   ######################################################################
   ## Generate results according to comparison
   ######################################################################
@@ -591,14 +603,14 @@ relevel_function <- function(dds_object, category, reference, given_dir, dfAnnot
       listNames <- get_comparison_resultsNames(coef_name)
       
       res_dds = DESeq2_HCGB_function( 
-        dds_object = dds_object_releveled, coef_n = coef_name, 
-        name= listNames[1], 
+        dds_object = dds_object_releveled, 
+        coef_n = coef_name, comp_ID="relevel", comp_name = listNames[1], 
         numerator = listNames[2], denominator = listNames[3],
         OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, 
         threads = as.numeric(int_threads))
       
       ## save to return
-      print (head(res_dds))
+      #print (head(res_dds))
       results_list[[coef_name]] <- res_dds
     }
   }
@@ -953,7 +965,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
   dev.off()
   # 
   
-  PCA_data <- plotPCA(vsd, returnData=TRUE)
+  #PCA_data <- plotPCA(vsd, returnData=TRUE)
   
   ### cooks distance
   df.cooks <- as.data.frame(log10(assays(dds_object.exp)[["cooks"]])) %>% melt()
@@ -965,7 +977,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
     #"phylo_plot" = phylo_plot,
     "sampleDist" = sampleDist,
     "PCA" = list(
-      "PCA_data" = PCA_data,
+      "PCA_data" = vsd,
       "PCA_list" = list_pca
     ),
     "cooks.data" = df.cooks
