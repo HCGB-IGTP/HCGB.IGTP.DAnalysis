@@ -212,8 +212,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     data2return<- list(
       "res_filtered" = res_filtered,
       "sign.df"=sign.data,
-      "sign.genes"=sign.df$Gene,
-      "sign.count"=length(sign.df$Gene)
+      "sign.genes"=sign.data$Gene,
+      "sign.count"=length(sign.data$Gene)
     )
 
     #####
@@ -373,9 +373,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     #"dds_object" = dds_object,
     #"res"=res,
     "res_filtered"=res_filtered,
-    "sign.df"=sign.df,
-    "sign.genes"=sign.df$Gene,
-    "sign.count"=length(sign.df$Gene)
+    "sign.df"=sign.data,
+    "sign.genes"=sign.data$Gene,
+    "sign.count"=length(sign.data$Gene)
   )
   
   ## dump in disk RData
