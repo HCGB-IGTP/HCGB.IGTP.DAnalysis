@@ -180,10 +180,11 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   
   ##get significant data only with counts in all samples
   ##get significant data only padj < 0.05 and log2FoldChange >1.2
-  sign.data<-alldata[alldata$padj<0.05,]
-  sign.data<-sign.data[!is.na(sign.data$padj),]
-  sign.data<-sign.data[abs(  sign.data$log2FoldChange)>log2(1.2),]
-  sign.data <- sign.data[order(sign.data$padj),]
+  #sign.data<-alldata[alldata$padj<0.05,]
+  #sign.data<-sign.data[!is.na(sign.data$padj),]
+  #sign.data<-sign.data[abs(  sign.data$log2FoldChange)>log2(1.2),]
+  
+  sign.data <- filter_signficant_DESEQ(alldata, sign_value = 0.05, LFC = log2(1.2))
   row.names(sign.data) <- sign.data$Gene
   
   # Results table in the same order than counting table
@@ -201,8 +202,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       #"res"=res,
       "res_filtered" = res_filtered,
       "sign.df"=sign.data,
-      "sign.genes"=sign.df$Gene,
-      "sign.count"=length(sign.df$Gene)
+      "sign.genes"=sign.data$Gene,
+      "sign.count"=length(sign.data$Gene)
     )
     
     ## dump in disk RData
@@ -363,8 +364,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   print(file_name)
   ######################################################################
   
-  sign.df <- filter_signficant_DESEQ(alldata)
-  
   data2save <- list(
     "alldata" = alldata,
     "data2pca" = data2pca,
@@ -384,9 +383,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   
   data2return <- list(
     "res_filtered"=res_filtered,
-    "sign.df"=sign.df,
-    "sign.genes"=sign.df$Gene,
-    "sign.count"=length(sign.df$Gene)
+    "sign.df"=sign.data,
+    "sign.genes"=sign.data$Gene,
+    "sign.count"=length(sign.data$Gene)
   )
   
   #####
