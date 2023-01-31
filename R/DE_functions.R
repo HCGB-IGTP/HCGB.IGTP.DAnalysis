@@ -358,7 +358,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "rld" = rld,
     "vsd" = vsd,
     "volcan_plot" = volcan_plot,
-    "dds_object" = dds_object,
+    #"dds_object" = dds_object,
     #"res"=res,
     "res_filtered"=res_filtered,
     "sign.df"=sign.df,
@@ -366,9 +366,12 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "sign.count"=length(sign.df$Gene)
   )
   
+  ## dump in disk RData
+  save(data2return, file=file.path(OUTPUT_Data_dir, "data2return.RData"))
+  
   
   #####
-  return(data2return)
+  return(data2return[c("dds_object", "sign.df", "sign.genes", "sign.count")])
 }
 
 
