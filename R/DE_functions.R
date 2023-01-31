@@ -195,13 +195,26 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   print(length(rownames(sign.data)))
   if (length(rownames(sign.data)) < 2) {
     
-    data2return <- list(
+    data2save<- list(
       "alldata" = alldata,
-      "dds_object" = dds_object,
-      "res"=res,
-      "res_filtered" = res_filtered
+      #"dds_object" = dds_object,
+      #"res"=res,
+      "res_filtered" = res_filtered,
+      "sign.df"=sign.data,
+      "sign.genes"=sign.df$Gene,
+      "sign.count"=length(sign.df$Gene)
     )
     
+    ## dump in disk RData
+    save(data2save, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
+    
+    data2return<- list(
+      "res_filtered" = res_filtered,
+      "sign.df"=sign.data,
+      "sign.genes"=sign.df$Gene,
+      "sign.count"=length(sign.df$Gene)
+    )
+
     #####
     return(data2return)
   }
@@ -352,7 +365,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   
   sign.df <- filter_signficant_DESEQ(alldata)
   
-  data2return <- list(
+  data2save <- list(
     "alldata" = alldata,
     "data2pca" = data2pca,
     "rld" = rld,
@@ -367,11 +380,17 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   )
   
   ## dump in disk RData
-  save(data2return, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
+  save(data2save, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
   
+  data2return <- list(
+    "res_filtered"=res_filtered,
+    "sign.df"=sign.df,
+    "sign.genes"=sign.df$Gene,
+    "sign.count"=length(sign.df$Gene)
+  )
   
   #####
-  return(data2return[c("dds_object", "sign.df", "sign.genes", "sign.count")])
+  return(data2return)
 }
 
 
