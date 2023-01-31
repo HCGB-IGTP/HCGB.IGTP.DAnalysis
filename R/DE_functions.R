@@ -590,7 +590,7 @@ relevel_function <- function(dds_object, category, reference, given_dir, dfAnnot
       print(paste0(" + Analysis for coefficient: ", coef_name))
       listNames <- get_comparison_resultsNames(coef_name)
       
-      res_dds = HCGB.IGTP.DAnalysis::DESeq2_HCGB_function( 
+      res_dds = DESeq2_HCGB_function( 
         dds_object = dds_object_releveled, coef_n = coef_name, 
         name= listNames[1], 
         numerator = listNames[2], denominator = listNames[3],
@@ -994,10 +994,10 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
   
   results_list <- list()
   if (is.numeric(coef_n)) {
-    listNames <- HCGB.IGTP.DAnalysis::get_comparison_resultsNames(resultsNames(dds_object)[coef_n])
+    listNames <- get_comparison_resultsNames(resultsNames(dds_object)[coef_n])
     print(listNames)
     print(paste0(" + Analysis for coefficient given: ", as.character(coef_n)))
-    res_dds = HCGB.IGTP.DAnalysis::DESeq2_HCGB_function(
+    res_dds = DESeq2_HCGB_function(
       dds_object = dds_object, coef_n = coef_n, comp_name = listNames[1], comp_ID = comp_ID,
       numerator = listNames[2], denominator = listNames[3],
       OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
@@ -1012,11 +1012,11 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
     for (coef_name in resultsNames(dds_object)) {
       if (coef_name=="Intercept") {} else {
         print(paste0(" + Analysis for coefficient: ", coef_name))
-        listNames <- HCGB.IGTP.DAnalysis::get_comparison_resultsNames(coef_name)
+        listNames <- get_comparison_resultsNames(coef_name)
         
         print(listNames)
         
-        res_dds = HCGB.IGTP.DAnalysis::DESeq2_HCGB_function(
+        res_dds = DESeq2_HCGB_function(
           dds_object = dds_object, coef_n = coef_name, comp_ID = comp_ID,
           comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
           OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
