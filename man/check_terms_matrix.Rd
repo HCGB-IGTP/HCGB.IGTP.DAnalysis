@@ -11,7 +11,8 @@ check_terms_matrix(
   red.formula.given,
   compID.given,
   dfAnnotation.given,
-  comp.folder.given
+  comp.folder.given,
+  int_threads = 2
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ check_terms_matrix(
 \item{dfAnnotation.given}{Dataframe with useful metadata to include}
 
 \item{comp.folder.given}{Absolute path to store results}
+
+\item{int_threads}{Number of threads to use}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them

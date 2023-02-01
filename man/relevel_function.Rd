@@ -10,7 +10,7 @@ relevel_function(
   reference,
   given_dir,
   dfAnnotation,
-  int_threads
+  int_threads = 2
 )
 }
 \arguments{

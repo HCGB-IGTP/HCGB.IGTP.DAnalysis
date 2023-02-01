@@ -13,7 +13,8 @@ DESeq2_HCGB_function(
   denominator = "example2",
   OUTPUT_Data_dir,
   df_treatment_Ind,
-  threads = 2
+  threads = 2,
+  forceResults = FALSE
 )
 }
 \arguments{

@@ -9,7 +9,8 @@ check_reduced_LRT(
   formula_given,
   comp.folder.given,
   compID.given,
-  dfAnnotation.given
+  dfAnnotation.given,
+  int_threads = 2
 )
 }
 \arguments{

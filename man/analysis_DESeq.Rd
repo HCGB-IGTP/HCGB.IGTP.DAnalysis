@@ -9,8 +9,8 @@ analysis_DESeq(
   count_table,
   sample_sheet_given,
   dfAnnotation,
-  int_threads,
   formula_given,
+  int_threads = 2,
   coef_n = NA,
   early_return = FALSE,
   comp_ID = NULL
@@ -25,9 +25,9 @@ analysis_DESeq(
 
 \item{dfAnnotation}{Dataframe with useful metadata to include}
 
-\item{int_threads}{Number of threads to use}
-
 \item{formula_given}{Design formula to use}
+
+\item{int_threads}{Number of threads to use}
 
 \item{coef_n}{Number of the coefficient of results to test \link{if desired}}
 
