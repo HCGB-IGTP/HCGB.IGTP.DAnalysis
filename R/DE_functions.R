@@ -122,7 +122,10 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   library(ggfortify)
   library(ggrepel)
   library(pheatmap)
-  
+  library(reshape2)
+  library(RColorBrewer)
+
+    
   ## set name
   file_name <- paste0(comp_ID, "_", comp_name, "_", numerator, "_vs_", denominator)
   
@@ -908,6 +911,10 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
 #' @param list_of_cols List of columns of interest to subset from metadata
 
 exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_of_cols){
+  
+  library(reshape2)
+  library(RColorBrewer)
+  
   ############################
   # Exploratory plots 
   ############################
