@@ -587,7 +587,7 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param dfAnnotation Dataframe containing additional information for each sample
 #' @param int_threads Number of CPUs to use [Default: 2].
 #' @export
-relevel_function <- function(dds_object, category, reference, given_dir, dfAnnotation, int_threads){
+relevel_function <- function(dds_object, category, reference, given_dir, dfAnnotation, int_threads=2){
   dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
   dds_object_releveled <- DESeq(dds_object, parallel = TRUE)
   
@@ -676,7 +676,7 @@ get_all_data_DESeq2 <- function(dds_obj, coef_n, type="DESeq2") {
 #' @param dfAnnotation.given Dataframe with useful metadata to include
 #' @export
 check_reduced_LRT <- function(dds_obj.given, formula_given, 
-                              comp.folder.given, compID.given, dfAnnotation.given) {
+                              comp.folder.given, compID.given, dfAnnotation.given, int_threads=2) {
   
   ## LRT: Check reduction
   DEseq.red <- DESeq2::DESeq(object = dds_obj.given, test="LRT", 
@@ -693,7 +693,7 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
   DEseq.red.res <- get_Results_DDS(dds_object = DEseq.red, 
                                    OUTPUT_Data_dir_given = comp.folder.given, 
                                    comp_ID = compID.given,
-                                   dfAnnotation = dfAnnotation.given)
+                                   dfAnnotation = dfAnnotation.given, int_threads = int_threads)
   
   return(DEseq.red.res)
 }
@@ -708,9 +708,11 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
 #' @param compID.given Tag name to include for each comparison
 #' @param dfAnnotation.given Dataframe with useful metadata to include
 #' @param comp.folder.given Absolute path to store results
+#' @param int_threads Number of threads to use
+
 #' @export
 check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.formula.given, 
-                               compID.given, dfAnnotation.given, comp.folder.given) {
+                               compID.given, dfAnnotation.given, comp.folder.given, int_threads=2) {
   
   resulst_list <- list()
   
@@ -725,7 +727,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   
   naive_res <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
                               count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
-                              int_threads = 2, dfAnnotation = dfAnnotation.given, 
+                              int_threads = int_threads, dfAnnotation = dfAnnotation.given, 
                               formula_given = as.formula(paste0("~", red.formula.given)), 
                               early_return = FALSE, comp_ID = paste0(compID.given, ".naive"))
   
@@ -752,7 +754,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
     this.term.res <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
                                     count_table = countsGiven, 
                                     sample_sheet_given = sampleSheet.given, 
-                                    int_threads = 2, 
+                                    int_threads = int_threads, 
                                     dfAnnotation = dfAnnotation.given, 
                                     formula_given = as.formula(paste0("~", term, "+", red.formula.given)), 
                                     early_return = FALSE, 
@@ -772,7 +774,8 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
     
     resulst_list[[paste0(term, ".red")]] = check_reduced_LRT(dds_obj.given = this.term.res$dds_obj, 
                                                              formula_given = as.formula(paste0("~", red.formula.given)),
-                                                             comp.folder.given = comp.folder.given, compID.given = paste0(comp_ID.here, ".red"), 
+                                                             comp.folder.given = comp.folder.given, 
+                                                             compID.given = paste0(comp_ID.here, ".red"), 
                                                              dfAnnotation.given = dfAnnotation.given)
     
   }
@@ -791,7 +794,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   
   resulst_list[["complex"]] = analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
                                              count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
-                                             int_threads = 2, dfAnnotation = dfAnnotation.given, 
+                                             int_threads = int_threads, dfAnnotation = dfAnnotation.given, 
                                              formula_given = as.formula(paste0("~", paste(list.terms, "+ ", collapse = ""), red.formula.given)), 
                                              early_return = FALSE, 
                                              comp_ID = paste0(compID.given, ".complex"))
@@ -820,7 +823,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param comp_ID Tag name to include for each comparison
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
-                           dfAnnotation, int_threads, formula_given, 
+                           dfAnnotation, formula_given, int_threads=2,
                            coef_n=NA, early_return=FALSE, comp_ID=NULL) {
   
   dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
