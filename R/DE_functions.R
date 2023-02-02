@@ -912,7 +912,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
 #' @param OUTPUT_dir Absolute path to store results
 #' @param dfAnnotation_df Dataframe with useful metadata to include
 #' @param list_of_cols List of columns of interest to subset from metadata
-
+#' @export
 exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_of_cols){
   
   library(reshape2)
@@ -1007,7 +1007,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 #' @param comp_ID Tag name to include for each comparison
 #' @param int_threads Number of threads to use in the analysis
 #' @param coef_n Number of the coefficient of results to test [if desired]
-
+#' @export
 get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, comp_ID,
                             int_threads=2, coef_n=NA) {
   ###########
