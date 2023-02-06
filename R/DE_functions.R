@@ -1055,3 +1055,38 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
   return(results_list)
 }
 
+#' Check the rank of a design matrix
+#' 
+#' When running DESeq2 you need a design matrix, check the rank of it first
+#' @param formula2test String with formula to check
+#' @param data.df Sample sheet dataframe
+#' @export
+check_rank_design <- function(formula2test, data.df) {
+  m <- model.matrix(as.formula(formula2test), data=data.df)
+  
+  print("colnames(m)")
+  print(colnames(m))
+  
+  print("Check if colSums or rowSums == 0")
+  
+  print("## check rows: samples")
+  row.res <- apply(m, 1, function(x) all(x==0)) ## check rows: samples
+  print(table(row.res))
+  print("")
+  print(row.res)
+  print("")
+  print(which(row.res))
+  print("which(row.res)")
+  
+  print("")
+  print("## check columns: categories")
+  col.res <- apply(m, 2, function(x) all(x==0)) ## check columns: categories
+  
+  print("table(col.res)")
+  print(table(col.res))
+  print("")
+  print(col.res)
+  print("")
+  print("which(col.res)")
+  print(which(col.res))
+}

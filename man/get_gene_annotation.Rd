@@ -4,7 +4,11 @@
 \alias{get_gene_annotation}
 \title{Get gene annotation from BioMart}
 \usage{
-get_gene_annotation(Genelist, species = "hsapiens_gene_ensembl")
+get_gene_annotation(
+  Genelist,
+  species = "hsapiens_gene_ensembl",
+  get_uniprot = FALSE
+)
 }
 \arguments{
 \item{GeneList}{Gene IDs entries. ENSMBL genes only.}

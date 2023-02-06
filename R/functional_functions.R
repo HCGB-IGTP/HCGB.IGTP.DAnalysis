@@ -216,7 +216,7 @@ plot_GSEA <- function(fgRes, title_given) {
 #' @param GeneList Gene IDs entries. ENSMBL genes only.
 #' @param datasets By default: hsapiens_gene_ensembl
 #' @export
-get_gene_annotation <- function(Genelist, species="hsapiens_gene_ensembl") {
+get_gene_annotation <- function(Genelist, species="hsapiens_gene_ensembl", get_uniprot=FALSE) {
   ##get gene symbols from biomart - watch out for suffixes effect on annotation retrieval!!!
   
   library(biomaRt)
@@ -225,61 +225,80 @@ get_gene_annotation <- function(Genelist, species="hsapiens_gene_ensembl") {
   ## If we filter by hgnc_symbol it gets duplicates and it is not uniq
   ## ENSEMBL id is unique
   
-  # Several entries for UNIPROT ids
-  GeneSymbolsTable_full <-getBM(attributes = c('ensembl_gene_id_version','ensembl_gene_id', 
-                                               'hgnc_symbol', 'description', 'gene_biotype', 
-                                               'uniprot_gn_id', 'uniprotswissprot'),
-                                filters = 'ensembl_gene_id', 
-                                values = Genelist,
-                                mart = mart)
+  if (get_uniprot) {
   
-  ## we will be using uniprot_swissprot
-  #head(GeneSymbolsTable_full)
-  #length(unique(GeneSymbolsTable_full$uniprot_gn))
-  #length(unique(GeneSymbolsTable_full$uniprotswissprot))
+    # Several entries for UNIPROT ids
+    GeneSymbolsTable_full <-getBM(attributes = c('ensembl_gene_id_version','ensembl_gene_id', 
+                                                 'hgnc_symbol', 'description', 'gene_biotype', 
+                                                 'uniprot_gn_id', 'uniprotswissprot'),
+                                  filters = 'ensembl_gene_id', 
+                                  values = Genelist,
+                                  mart = mart)
+    
+    
+    
+    ## we will be using uniprot_swissprot
+    #head(GeneSymbolsTable_full)
+    #length(unique(GeneSymbolsTable_full$uniprot_gn))
+    #length(unique(GeneSymbolsTable_full$uniprotswissprot))
+    
+    ## discard missing swisprot ids
+    #library(tidyr)
+    GeneSymbolsTable_swissprot_filter <- GeneSymbolsTable_full[!(is.na(GeneSymbolsTable_full$uniprotswissprot) | GeneSymbolsTable_full$uniprotswissprot==""), ]
+    #head(GeneSymbolsTable_swissprot_filter)
+    #dim(GeneSymbolsTable_full)
+    #dim(GeneSymbolsTable_swissprot_filter)
+    #length(unique(GeneSymbolsTable_swissprot_filter$uniprotswissprot))
+    
+    #example_df <- head(GeneSymbolsTable_swissprot_filter, 1000)
+    #example_df %>% group_by(uniprotswissprot) %>% mutate(uniprot_IDs = paste0(uniprot_gn, collapse = ",")) 
+    
+    ## merge by , uniprot_gn for each UniProt-Swissprot identified
+    df_filtered <- GeneSymbolsTable_swissprot_filter %>% 
+      group_by(uniprotswissprot) %>% 
+      mutate(uniprot_IDs = paste0(unique(uniprot_gn_id), collapse = ","))
+    
+    df_tmp <- df_filtered %>% 
+      group_by(ensembl_gene_id) %>% 
+      mutate(hgnc_symbol_ID = paste0(unique(hgnc_symbol), collapse = ","))
+    
+    df_filtered2 <- df_tmp %>% 
+      group_by(ensembl_gene_id) %>% 
+      mutate(uniprotswissprot_IDs = paste0(unique(uniprotswissprot), collapse = ","))
+    
+    dim(df_filtered2)
+    head(df_filtered2)
+    tail(df_filtered2)
+    
+    ## discard column: uniprot_gn_id, uniprot_swissprot
+    df_filtered2$uniprot_gn_id <- NULL
+    df_filtered2$uniprotswissprot <- NULL
+    df_filtered2$hgnc_symbol <- NULL
+    
+    dim(df_filtered)
+    head(df_filtered)
+    
+    ## remove duplicates
+    df_filtered3 <- df_filtered2[!duplicated(df_filtered2),]
+    dim(df_filtered3)
+    head(df_filtered3)
+    
+    return(df_filtered3)  
+  } else {
+    
+    ## Just name, description and biotype    
+    GeneSymbolsTable_full <-getBM(attributes = c('ensembl_gene_id', 
+                                                 'hgnc_symbol', 'description', 'gene_biotype'),
+                                  filters = 'ensembl_gene_id', 
+                                  values = Genelist,
+                                  mart = mart)
+    
+    
+    return(GeneSymbolsTable_full)
+  }
   
-  ## discard missing swisprot ids
-  #library(tidyr)
-  GeneSymbolsTable_swissprot_filter <- GeneSymbolsTable_full[!(is.na(GeneSymbolsTable_full$uniprotswissprot) | GeneSymbolsTable_full$uniprotswissprot==""), ]
-  #head(GeneSymbolsTable_swissprot_filter)
-  #dim(GeneSymbolsTable_full)
-  #dim(GeneSymbolsTable_swissprot_filter)
-  #length(unique(GeneSymbolsTable_swissprot_filter$uniprotswissprot))
   
-  #example_df <- head(GeneSymbolsTable_swissprot_filter, 1000)
-  #example_df %>% group_by(uniprotswissprot) %>% mutate(uniprot_IDs = paste0(uniprot_gn, collapse = ",")) 
   
-  ## merge by , uniprot_gn for each UniProt-Swissprot identified
-  df_filtered <- GeneSymbolsTable_swissprot_filter %>% 
-    group_by(uniprotswissprot) %>% 
-    mutate(uniprot_IDs = paste0(unique(uniprot_gn_id), collapse = ","))
-  
-  df_tmp <- df_filtered %>% 
-    group_by(ensembl_gene_id) %>% 
-    mutate(hgnc_symbol_ID = paste0(unique(hgnc_symbol), collapse = ","))
-  
-  df_filtered2 <- df_tmp %>% 
-    group_by(ensembl_gene_id) %>% 
-    mutate(uniprotswissprot_IDs = paste0(unique(uniprotswissprot), collapse = ","))
-  
-  dim(df_filtered2)
-  head(df_filtered2)
-  tail(df_filtered2)
-  
-  ## discard column: uniprot_gn_id, uniprot_swissprot
-  df_filtered2$uniprot_gn_id <- NULL
-  df_filtered2$uniprotswissprot <- NULL
-  df_filtered2$hgnc_symbol <- NULL
-  
-  dim(df_filtered)
-  head(df_filtered)
-  
-  ## remove duplicates
-  df_filtered3 <- df_filtered2[!duplicated(df_filtered2),]
-  dim(df_filtered3)
-  head(df_filtered3)
-  
-  return(df_filtered3)
   
 }
 
