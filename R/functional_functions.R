@@ -166,7 +166,7 @@ rank_list_by <- function(table_data, option_given="logFC", GENE_SYMBOL.col="GENE
 #' @param title_given Title to include in the ggplot generated
 #' @param nproc_given Number of threads to use
 #' @export
-FGSEA_GSEA <- function(gene_list_provided, myGeneSet, title_given="example", nproc_given=2, minSize=10, maxSize=600, nPermSimple = 10000) {
+FGSEA_GSEA <- function(gene_list_provided, myGeneSet, title_given="example", nproc_given=2, minSize=10, maxSize=600, nPermSimple = 10000, padj.thres=0.25) {
   
   library(fgsea)
   fgRes <- fgsea::fgseaMultilevel(pathways = myGeneSet, minSize=minSize, maxSize=maxSize, nPermSimple = nPermSimple,
@@ -174,7 +174,7 @@ FGSEA_GSEA <- function(gene_list_provided, myGeneSet, title_given="example", npr
   #minSize=1,
   #minSize=15, maxSize=600, nperm=10000) %>% as.data.frame()
   
-  fgRes1 <- fgRes[fgRes$padj<0.25,]
+  fgRes1 <- fgRes[fgRes$padj<padj.thres,]
   data.table::setorder(fgRes1, padj)
 
   returnList = list(
@@ -259,7 +259,7 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
                                                                          as.character(ranker), 
                                                                          ":: Gene set = ", 
                                                                          dataSet), 
-                                                    nproc_given=nproc_given)
+                                                    nproc_given=nproc_given, padj.thres = padj.thres)
       
       file_name = paste0(name_given, "-rank-by_", as.character(ranker), "_", dataSet)
       # print data
