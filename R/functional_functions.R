@@ -266,7 +266,9 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
       
       
       if (dim(subset(FGSEA_data$fgRes, padj<padj.thres))[1] > 1) {
-        #write.csv(FGSEA_data$fgRes, file = file_name)
+        print("Printing data in CSV..")
+        write.csv(FGSEA_data$fgRes, file = file.path(folder_out, file_name, ".csv"), quote = TRUE)
+        
         print("Printing plot in PDF..")
         save_pdf(folder_path = folder_out, 
                                       name_file = paste0(file_name, ".top"), 
@@ -276,9 +278,6 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
                  name_file = paste0(file_name, ".all"), 
                  plot_given = FGSEA_data$p$all)
         
-        print("Printing data in XLSX..")
-        print(xlsx_file)
-        
         addWorksheet(wb, dataSet)
         writeData(wb, dataSet, 
                   FGSEA_data$fgRes,
@@ -287,9 +286,13 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
         
       }
       # 
+      print("Printing data in XLSX..")
+      print(xlsx_file)
+      
       fgsea2return[[ranker]][[dataSet]] = FGSEA_data
+      saveWorkbook(wb, xlsx.file, overwrite = TRUE)
     }
-    saveWorkbook(wb, xlsx.file, overwrite = TRUE)
+    
     
   }
   
