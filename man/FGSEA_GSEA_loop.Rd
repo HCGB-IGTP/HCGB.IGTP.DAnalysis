@@ -2,7 +2,7 @@
 % Please edit documentation in R/functional_functions.R
 \name{FGSEA_GSEA_loop}
 \alias{FGSEA_GSEA_loop}
-\title{Plog GSEA loop}
+\title{Create GSEA loop}
 \usage{
 FGSEA_GSEA_loop(
   table_annot,
@@ -11,7 +11,8 @@ FGSEA_GSEA_loop(
   nproc_given,
   dataSet.list,
   GENE_SYMBOL.col = "GENE_SYMBOL",
-  ranker.list = c("log2FoldChange", "padj")
+  ranker.list = c("log2FoldChange", "padj"),
+  padj.thres = 0.25
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ FGSEA_GSEA_loop(
 \item{GENE_SYMBOL.col}{name of the hgnc column}
 
 \item{ranker.list}{columns to use for ranking}
+
+\item{padj.thres}{Pvalue adjusted threshold}
 }
 \description{
 Plots GSEA results using ggplot and enrichment score provided

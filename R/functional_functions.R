@@ -223,12 +223,13 @@ plot_GSEA <- function(fgRes, title_given) {
 #' @param dataSet.list list of GSEA datasets
 #' @param GENE_SYMBOL.col name of the hgnc column
 #' @param ranker.list columns to use for ranking
+#' @param padj.thres Pvalue adjusted threshold
 #' @export
 FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given, 
                             dataSet.list, GENE_SYMBOL.col="GENE_SYMBOL",  
-                            ranker.list=c("log2FoldChange", "padj")) {
+                            ranker.list=c("log2FoldChange", "padj"), padj.thres=0.25) {
   
-  library(xlsx)
+  library(openxlsx)
   
   
   ## FGSEA analysis
@@ -264,7 +265,7 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
       # print data
       
       
-      if (dim(subset(FGSEA_data$fgRes, padj<0.25))[1] > 1) {
+      if (dim(subset(FGSEA_data$fgRes, padj<padj.thres))[1] > 1) {
         #write.csv(FGSEA_data$fgRes, file = file_name)
         print("Printing plot in PDF..")
         save_pdf(folder_path = folder_out, 
