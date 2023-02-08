@@ -267,7 +267,7 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
       
       if (dim(subset(FGSEA_data$fgRes, padj<padj.thres))[1] > 1) {
         print("Printing data in CSV..")
-        write.csv(FGSEA_data$fgRes, file = file.path(folder_out, file_name, ".csv"), quote = TRUE)
+        write.csv(FGSEA_data$fgRes, file = file.path(folder_out, paste0(file_name, ".csv")), quote = TRUE)
         
         print("Printing plot in PDF..")
         save_pdf(folder_path = folder_out, 
