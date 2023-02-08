@@ -11,7 +11,8 @@ FGSEA_GSEA(
   nproc_given = 2,
   minSize = 10,
   maxSize = 600,
-  nPermSimple = 10000
+  nPermSimple = 10000,
+  padj.thres = 0.25
 )
 }
 \arguments{
