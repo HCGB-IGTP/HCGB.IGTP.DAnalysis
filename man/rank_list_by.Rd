@@ -4,7 +4,11 @@
 \alias{rank_list_by}
 \title{Rank table by given variable}
 \usage{
-rank_list_by(table_data, option_given = "logFC")
+rank_list_by(
+  table_data,
+  option_given = "logFC",
+  GENE_SYMBOL.col = "GENE_SYMBOL"
+)
 }
 \arguments{
 \item{table_data}{Dataframe containing information}

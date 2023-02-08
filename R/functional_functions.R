@@ -143,11 +143,18 @@ get_GSEA_datasets <- function(species_given="Homo sapiens"){
 #' @param table_data Dataframe containing information
 #' @param option_given Column name to retrieve data.
 #' @export
-rank_list_by <- function(table_data, option_given="logFC") {
+rank_list_by <- function(table_data, option_given="logFC", GENE_SYMBOL.col="GENE_SYMBOL") {
   
-  table_data <- table_data[!table_data$GENE_SYMBOL=="",]
+  print(dim(table_data))
+  table_data <-subset(table_data, !GENE_SYMBOL.col=="")
+  print(table_data)
+  print(dim(table_data))
+  
   gene_list <- table_data[[option_given]]
-  names(gene_list) = table_data$GENE_SYMBOL
+  
+  print(gene_list)
+  print(table_data[[GENE_SYMBOL.col]])
+  names(gene_list) = table_data[[GENE_SYMBOL.col]]
   
   gene_list <- gene_list[order(gene_list)]
   
@@ -172,11 +179,13 @@ FGSEA_GSEA <- function(gene_list_provided, myGeneSet, title_given="example", npr
   
   fgRes1 <- fgRes[fgRes$padj<0.25,]
   data.table::setorder(fgRes1, padj)
-  p <- plot_GSEA(fgRes1, title_given)
-  
+
   returnList = list(
     fgRes = fgRes,
-    p = p
+    p = list(
+      "top" = plot_GSEA(head(fgRes1, n=10), title_given),
+      "all" = plot_GSEA(fgRes1, title_given)
+      )
   )
   
   return(returnList)
@@ -192,13 +201,10 @@ plot_GSEA <- function(fgRes, title_given) {
   
   fgRes$Enrichment = ifelse(fgRes$ES > 0, "Up-regulated", "Down-regulated")
   
-  filtRes = rbind(head(fgRes, n = 10),tail(fgRes, n = 10 ))
-  #filtRes = fgRes
-  
   library(ggplot2)
   g = ggplot(filtRes, aes(reorder(pathway, ES), ES)) +
     geom_segment( aes(reorder(pathway, ES), xend=pathway, y=0, yend=ES)) +
-    geom_point( size=5, aes( fill = Enrichment),
+    geom_point(aes( fill = Enrichment, size=padj),
                 shape=21, stroke=2) +
     scale_fill_manual(values = c("Down-regulated" = "dodgerblue",
                                  "Up-regulated" = "firebrick") ) +
@@ -209,6 +215,91 @@ plot_GSEA <- function(fgRes, title_given) {
   
   return(g)
 }
+
+#' Plog GSEA loop
+#' 
+#' Plots GSEA results using ggplot and enrichment score provided
+#' @param table_annot table to get results
+#' @param folder_out folder to store results
+#' @param name_given name for the comparison
+#' @param nproc_given threads to use
+#' @param dataSet.list list of GSEA datasets
+#' @param GENE_SYMBOL.col name of the hgnc column
+#' @param ranker.list columns to use for ranking
+#' @export
+FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given, 
+                            dataSet.list, GENE_SYMBOL.col="GENE_SYMBOL",  
+                            ranker.list=c("log2FoldChange", "padj")) {
+  
+  library(xlsx)
+  
+  
+  ## FGSEA analysis
+  fgsea2return = list()
+  
+  
+  for (ranker in ranker.list ) {
+    ## 
+    print(paste0("+ Get data ranked by: ", ranker))
+    gene_list_ranked <- rank_list_by(table_data = table_annot, 
+                                     option_given = ranker, GENE_SYMBOL.col = GENE_SYMBOL.col)
+    
+    #print(gene_list_ranked)
+    
+    print("+ FGSEA analysis started...")
+    print("")
+    
+    wb <- createWorkbook()
+    xlsx_file <- file.path(folder_out, paste0(name_given, "-rank-by_", as.character(ranker), ".xlsx"))
+    
+    for (dataSet in names(dataSet.list)) {
+      
+      print(paste0("+ Analysis for: ", dataSet))
+      FGSEA_data <- FGSEA_GSEA(na.omit(gene_list_ranked), GSEA_datasets[[dataSet]], 
+                                                    title_given = paste0(name_given, 
+                                                                         " ranked by ", 
+                                                                         as.character(ranker), 
+                                                                         ":: Gene set = ", 
+                                                                         dataSet), 
+                                                    nproc_given=nproc_given)
+      
+      file_name = paste0(name_given, "-rank-by_", as.character(ranker), "_", dataSet)
+      # print data
+      
+      
+      if (dim(subset(FGSEA_data$fgRes, padj<0.25))[1] > 1) {
+        #write.csv(FGSEA_data$fgRes, file = file_name)
+        print("Printing plot in PDF..")
+        save_pdf(folder_path = folder_out, 
+                                      name_file = paste0(file_name, ".top"), 
+                                      plot_given = FGSEA_data$p$top)
+        
+        save_pdf(folder_path = folder_out, 
+                 name_file = paste0(file_name, ".all"), 
+                 plot_given = FGSEA_data$p$all)
+        
+        print("Printing data in XLSX..")
+        print(xlsx_file)
+        
+        addWorksheet(wb, dataSet)
+        writeData(wb, dataSet, 
+                  FGSEA_data$fgRes,
+                  startRow = 2, startCol=2,rowNames = FALSE,
+                  keepNA=TRUE,na.string="NA")
+        
+      }
+      # 
+      fgsea2return[[ranker]][[dataSet]] = FGSEA_data
+    }
+    saveWorkbook(wb, xlsx.file, overwrite = TRUE)
+    
+  }
+  
+  return(fgsea2return)
+  
+}
+
+
 
 #' Get gene annotation from BioMart
 #'
