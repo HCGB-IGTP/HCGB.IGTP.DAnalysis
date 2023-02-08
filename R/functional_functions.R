@@ -152,10 +152,7 @@ rank_list_by <- function(table_data, option_given="logFC", GENE_SYMBOL.col="GENE
   
   gene_list <- table_data[[option_given]]
   
-  print(gene_list)
-  print(table_data[[GENE_SYMBOL.col]])
   names(gene_list) = table_data[[GENE_SYMBOL.col]]
-  
   gene_list <- gene_list[order(gene_list)]
   
   return(gene_list)
@@ -202,7 +199,7 @@ plot_GSEA <- function(fgRes, title_given) {
   fgRes$Enrichment = ifelse(fgRes$ES > 0, "Up-regulated", "Down-regulated")
   
   library(ggplot2)
-  g = ggplot(filtRes, aes(reorder(pathway, ES), ES)) +
+  g = ggplot(fgRes, aes(reorder(pathway, ES), ES)) +
     geom_segment( aes(reorder(pathway, ES), xend=pathway, y=0, yend=ES)) +
     geom_point(aes( fill = Enrichment, size=padj),
                 shape=21, stroke=2) +
@@ -216,7 +213,7 @@ plot_GSEA <- function(fgRes, title_given) {
   return(g)
 }
 
-#' Plog GSEA loop
+#' Create GSEA loop
 #' 
 #' Plots GSEA results using ggplot and enrichment score provided
 #' @param table_annot table to get results
