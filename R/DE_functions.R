@@ -821,10 +821,11 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param coef_n Number of the coefficient of results to test [if desired]
 #' @param early_return Whether to return exploratory results early or not
 #' @param comp_ID Tag name to include for each comparison
+#' @param cutoff.given add an option to include cutoff when removing Zeros
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
                            dfAnnotation, formula_given, int_threads=2,
-                           coef_n=NA, early_return=FALSE, comp_ID=NULL) {
+                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9) {
   
   dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
   
@@ -832,7 +833,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   ## Create list object for DESeq: remove 0 values
   #############
   data_DESeq <- list(
-    "counts"=HCGB.IGTP.DAnalysis::discard_0_counts(countsF = count_table),
+    "counts"=HCGB.IGTP.DAnalysis::discard_0_counts(countsF = count_table, cutoff = cutoff.given),
     "target"=sample_sheet_given
   )
   data_DESeq <- HCGB.IGTP.DAnalysis::adjust_samples(data_DESeq$counts, data_DESeq$target)

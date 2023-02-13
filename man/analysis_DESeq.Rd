@@ -13,7 +13,8 @@ analysis_DESeq(
   int_threads = 2,
   coef_n = NA,
   early_return = FALSE,
-  comp_ID = NULL
+  comp_ID = NULL,
+  cutoff.given = 0.9
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ analysis_DESeq(
 \item{early_return}{Whether to return exploratory results early or not}
 
 \item{comp_ID}{Tag name to include for each comparison}
+
+\item{cutoff.given}{add an option to include cutoff when removing Zeros}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them

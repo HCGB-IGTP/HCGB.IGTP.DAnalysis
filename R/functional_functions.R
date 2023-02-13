@@ -254,25 +254,20 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
       
       print(paste0("+ Analysis for: ", dataSet))
       FGSEA_data <- FGSEA_GSEA(na.omit(gene_list_ranked), GSEA_datasets[[dataSet]], 
-                                                    title_given = paste0(name_given, 
-                                                                         " ranked by ", 
-                                                                         as.character(ranker), 
-                                                                         ":: Gene set = ", 
-                                                                         dataSet), 
-                                                    nproc_given=nproc_given, padj.thres = padj.thres)
+                               title_given = paste0(name_given, 
+                                                    " ranked by ", 
+                                                    as.character(ranker), 
+                                                    ":: Gene set = ", 
+                                                    dataSet), 
+                               nproc_given=nproc_given, padj.thres = padj.thres)
       
       file_name = paste0(name_given, "-rank-by_", as.character(ranker), "_", dataSet)
       # print data
       
-      
       if (dim(subset(FGSEA_data$fgRes, padj<padj.thres))[1] > 1) {
-        print("Printing data in CSV..")
-        write.csv(FGSEA_data$fgRes, file = file.path(folder_out, paste0(file_name, ".csv")), quote = TRUE)
-        
         print("Printing plot in PDF..")
-        save_pdf(folder_path = folder_out, 
-                                      name_file = paste0(file_name, ".top"), 
-                                      plot_given = FGSEA_data$p$top)
+        save_pdf(folder_path = folder_out, name_file = paste0(file_name, ".top"), 
+                 plot_given = FGSEA_data$p$top)
         
         save_pdf(folder_path = folder_out, 
                  name_file = paste0(file_name, ".all"), 
@@ -290,7 +285,7 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
       print(xlsx_file)
       
       fgsea2return[[ranker]][[dataSet]] = FGSEA_data
-      saveWorkbook(wb, xlsx.file, overwrite = TRUE)
+      saveWorkbook(wb, xlsx_file, overwrite = TRUE)
     }
     
     
@@ -299,7 +294,6 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
   return(fgsea2return)
   
 }
-
 
 
 #' Get gene annotation from BioMart
@@ -418,3 +412,78 @@ get_gene_coordinates <- function(Genelist, species="hsapiens_gene_ensembl") {
   
   return(Gene_coordinatesTable)
 }
+
+
+#' Create gene ontology enrichment for a given dataset
+#'
+#' Gets coordinates for the set of genes desired
+#' @param list_of_sets List of dataset to use
+#' @param geneUniverse List of total genes to use as "Universe"
+#' @param GO_folder Folder to store results
+#' @param tag2use Tag name to include
+#' @param org.Db2use Database to use: Default: 'org.Hs.eg.db'. It should be loaded first: library('org.Hs.eg.db')
+#' @param ont_types  List of ontologies classes to use. Default: c('CC', 'BP', 'MF') 
+#' @param keyType.given SYMBOL as default. See keytypes(org.Hs.eg.db) as an example for putative keys to use
+#' @export
+enricher_loop <- function (list_of_sets, geneUniverse, GO_folder, tag2use,
+                           org.Db2use='org.Hs.eg.db', ont_types = c('CC', 'BP', 'MF'), keyType.given='SYMBOL'){
+  library(clusterProfiler)
+  library(AnnotationDbi)
+  library(openxlsx)
+  
+  wb <- createWorkbook()
+  xlsx_file <- file.path(GO_folder, paste0(tag2use, "_enrichGO.xlsx"))
+  
+  
+  results2save <-list()
+  for (ont_T in ont_types) {
+    for (set2test in names(list_of_sets)) {
+      print(paste0("##### ", ont_T, ": ", set2test))
+      
+      name2use <- paste0(set2test, "-", ont_T)
+      
+      if (length(list_of_sets[[set2test]])<10) {
+        print("enrichGO analysis: not possible. Too few genes provided")
+        res <- ""
+        p <- ""
+        dat <- ""
+        
+      } else {
+        print("enrichGO analysis")
+        res <- clusterProfiler::enrichGO(gene = list_of_sets[[set2test]], 
+                                         universe = geneUniverse,
+                                         OrgDb = org.Db2use, 
+                                         keyType = keyType.given, 
+                                         ont = ont_T)
+        
+        
+        print("save results")
+        dat <- head(res, n = 100)
+        
+        if (dim(dat)[1]>10) {
+          p <- enrichplot::dotplot(res)
+          save_pdf(p, folder_path = GO_folder, name_file = paste0(tag2use, "_", name2use)  )
+        }
+        # save results
+        write.csv(dat, file=file.path(GO_folder, paste0(tag2use, "_", name2use, ".csv")))
+        
+        addWorksheet(wb, name2use)
+        writeData(wb, name2use, dat,
+                  startRow = 2, startCol=2,rowNames = FALSE,
+                  keepNA=TRUE,na.string="NA")
+        
+      }
+      
+      #
+      results2save[[set2test]][[ont_T]] <- list(
+        'results' = res,
+        'dat' = dat,
+        'plot' = p
+      )
+    }
+  }
+  saveWorkbook(wb, xlsx_file, overwrite = TRUE)
+  
+  return(results2save)  
+}
+
