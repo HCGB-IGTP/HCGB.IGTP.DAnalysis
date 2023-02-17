@@ -298,13 +298,21 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   select <- select[!is.na(select)] ## discard NA values
   
   ## Samples
+  print("Comparison: ")
+  print(comp_name)
+  
+  print("numerator: ")
+  print(numerator)
+  
+  print("denominator: ")
+  print(denominator)
+
   print("Samples: ")
   subsheet <- df_treatment_Ind[comp_name]
   colnames(subsheet)[1] <- 'comp_name'
   
   listOfSampls <- c(rownames(subset(subsheet, comp_name==numerator)),
     rownames(subset(subsheet, comp_name==denominator)))
-  
   print(listOfSampls)
   
   if ( length(select) > 5 ) {
