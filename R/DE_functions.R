@@ -299,7 +299,12 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   
   ## Samples
   print("Samples: ")
-  listOfSampls <- rownames(colData(dds_object))
+  subsheet <- df_treatment_Ind[comp_name]
+  colnames(subsheet)[1] <- 'comp_name'
+  
+  listOfSampls <- c(rownames(subset(subsheet, comp_name==numerator)),
+    rownames(subset(subsheet, comp_name==denominator)))
+  
   print(listOfSampls)
   
   if ( length(select) > 5 ) {
@@ -312,7 +317,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                           scale="row" ## centered and scale values per row
     ))
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation_allSamples"), plot_given = plot1)
+                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation_allSamples"), 
+                                  plot_given = plot1)
     
     ## plot vsd
     #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
@@ -324,24 +330,26 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     ))
     
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz_allSamples"), plot_given = plot2)
+                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz_allSamples"), 
+                                  plot_given = plot2)
     
     ## Only samples included in comparison
     
     ## plot rld
-    try(plot1 <- pheatmap(assay(rld)[select,listOfSampls], main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
+    try(plot3 <- pheatmap(assay(rld)[select,listOfSampls], main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
                           cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                           annotation_col = df_treatment_Ind,
                           color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
                           scale="row" ## centered and scale values per row
     ))
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"), plot_given = plot1)
+                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"), 
+                                  plot_given = plot3)
     
     
     ## plot vsd
     #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
-    try(plot2 <- pheatmap(assay(vsd)[select,listOfSampls], main="Variance Stabilization Pheatmap (p.adj<0.05 and [FC]>1.2)",
+    try(plot4 <- pheatmap(assay(vsd)[select,listOfSampls], main="Variance Stabilization Pheatmap (p.adj<0.05 and [FC]>1.2)",
                           cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                           annotation_col = df_treatment_Ind,
                           color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -349,7 +357,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     ))
     
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), plot_given = plot2)
+                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), 
+                                  plot_given = plot4)
     
     
   }

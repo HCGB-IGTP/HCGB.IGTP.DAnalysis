@@ -141,12 +141,12 @@ ggboxplot_scatter <- function(data_all_given, colName, y.coord) {
   
   library(ggpubr)
   
-  comb_m <- combn(levels(as.factor(data_all_given[[colName]])), m = 2, simplify = TRUE)
+  comb_m <- combn(levels(factor(data_all_given[[colName]])), m = 2, simplify = TRUE)
   my_comp <- lapply(seq_len(ncol(comb_m)), function(i) comb_m[,i])
   
   gg <- ggboxplot(data_all_given, x=colName, y=y.coord) + 
     stat_compare_means(comparisons = my_comp) + 
-    stat_compare_means(method = "anova", color="red")
+    stat_compare_means(method = "anova", color="red") + geom_boxplot(aes(fill=colName))
   
   return(gg)
   
