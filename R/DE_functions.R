@@ -625,7 +625,7 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param dfAnnotation Dataframe containing additional information for each sample
 #' @param int_threads Number of CPUs to use [Default: 2].
 #' @export
-relevel_function <- function(dds_object, category, reference, given_dir, dfAnnotation, int_threads=2){
+relevel_function <- function(dds_object, category, reference, given_dir, dfAnnotation, int_threads=2, comp_ID.given="comp1"){
   dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
   dds_object_releveled <- DESeq(dds_object, parallel = TRUE)
   
@@ -645,7 +645,8 @@ relevel_function <- function(dds_object, category, reference, given_dir, dfAnnot
       
       res_dds = DESeq2_HCGB_function( 
         dds_object = dds_object_releveled, 
-        coef_n = coef_name, comp_ID="relevel", comp_name = listNames[1], 
+        coef_n = coef_name, comp_ID=paste0("relevel_", comp_ID.given), 
+        comp_name = listNames[1], 
         numerator = listNames[2], denominator = listNames[3],
         OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, 
         threads = as.numeric(int_threads))
