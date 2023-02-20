@@ -354,11 +354,11 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       ## Only samples included in comparison
       dataSubset <- try(assay(rld)[select,listOfSampls], silent = TRUE)
       
-      if (exists(dataSubset)) {
+      if (exists("dataSubset")) {
         
-        print("select:")
-        print(select)
-        print(head(dataSubset))
+        #print("select:")
+        #print(select)
+        #print(head(dataSubset))
         
         ## plot rld
         plot3 <- pheatmap(dataSubset, main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
