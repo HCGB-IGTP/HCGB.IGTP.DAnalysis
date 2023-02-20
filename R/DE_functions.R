@@ -355,16 +355,13 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       ## Only samples included in comparison
       
       ## plot rld
-      try(
-        
-        plot3 <- pheatmap(assay(rld)[select,listOfSampls], main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
+      try(plot3 <- pheatmap(assay(rld)[select,listOfSampls], main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
                             cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                             annotation_col = df_treatment_Ind,
                             color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
                             scale="row" ## centered and scale values per row
-                          )
-      
-       HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                          ))
+      try(save_pdf(folder_path = OUTPUT_Data_sample, 
                                     name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"), 
                                     plot_given = plot3)
       )
@@ -377,9 +374,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                             annotation_col = df_treatment_Ind,
                             color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
                             scale="row" ## centered and scale values per row7
-                            )
-      
-      HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                            ))
+      try(save_pdf(folder_path = OUTPUT_Data_sample, 
                                     name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), 
                                     plot_given = plot4)
       )
