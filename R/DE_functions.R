@@ -296,8 +296,13 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     select <- select[!is.na(select)] ## discard NA values
     
     ## Samples
+    comp_name <- comp_name$category
     comp_name <- sub("\\.", "-", comp_name)
+    
+    numerator <- numerator$cmp1
     numerator <- sub("\\.", "-", numerator)
+    
+    denominator <- denominator$cmp2
     denominator <- sub("\\.", "-", denominator)
     
     print("Comparison: ")
