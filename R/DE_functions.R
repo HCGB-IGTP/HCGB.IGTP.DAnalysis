@@ -352,15 +352,14 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                     plot_given = plot2)
       
       ## Only samples included in comparison
-      
-      ## plot rld
-      try(
+      try(dataSubset <- assay(rld)[select,listOfSampls])
+      if (dataSubset) {
         
         print("select:")
         print(select)
-        dataSubset <- assay(rld)[select,listOfSampls]
         print(head(dataSubset))
         
+        ## plot rld
         plot3 <- pheatmap(dataSubset, main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
                             cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                             annotation_col = df_treatment_Ind,
@@ -383,7 +382,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       save_pdf(folder_path = OUTPUT_Data_sample, 
                                     name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), 
                                     plot_given = plot4)
-      )
+      }
+      
       
     }
     
