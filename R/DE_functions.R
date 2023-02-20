@@ -352,7 +352,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                     plot_given = plot2)
       
       ## Only samples included in comparison
-      try(dataSubset <- assay(rld)[select,listOfSampls])
+      dataSubset <- try(assay(rld)[select,listOfSampls], silent = TRUE)
       if (dataSubset) {
         
         print("select:")
