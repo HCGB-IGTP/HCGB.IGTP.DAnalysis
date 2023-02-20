@@ -353,7 +353,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       
       ## Only samples included in comparison
       dataSubset <- try(assay(rld)[select,listOfSampls], silent = TRUE)
-      if (dataSubset) {
+      if (exists(dataSubset)) {
         
         print("select:")
         print(select)
