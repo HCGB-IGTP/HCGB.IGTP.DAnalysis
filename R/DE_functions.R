@@ -217,6 +217,97 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   #--------------------------
   
   #--------------------------
+  ## Samples
+  #--------------------------
+  comp_name <- comp_name$category
+  comp_name <- sub("\\.", "-", comp_name)
+  
+  numerator <- numerator$cmp1
+  numerator <- sub("\\.", "-", numerator)
+  
+  denominator <- denominator$cmp2
+  denominator <- sub("\\.", "-", denominator)
+  
+  print("Hi there!")
+  
+  listOfSampls <- c()
+  
+  if (denominator=="reference") {
+    
+    listOfSampls <- c("None")
+    
+  } else {
+    print("Comparison: ")
+    print(comp_name)
+    
+    print("numerator: ")
+    print(numerator)
+    
+    print("denominator: ")
+    print(denominator)
+    
+    print("Samples: ")
+    subsheet <- df_treatment_Ind[comp_name]
+    colnames(subsheet)[1] <- 'comp_name'
+    #print(subsheet)
+    
+    listOfSampls <- c(rownames(subset(subsheet, comp_name==numerator)),
+                      rownames(subset(subsheet, comp_name==denominator)))
+    
+    Samplslist <- list(
+      numerator = rownames(subset(subsheet, comp_name==numerator)),
+      denominator = rownames(subset(subsheet, comp_name==denominator))
+    )
+    
+    ## Get data for this samples
+    ## 
+    
+    alldata2 <- alldata
+    
+    ## add basemean for each category
+    alldata2['baseMean_num'] <- rowMeans(alldata[,Samplslist$numerator])
+    alldata2['baseMean_den'] <- rowMeans(alldata[,Samplslist$denominator])
+    
+    ## number of 0s
+    alldata2['0counts_num'] <- apply(alldata[,Samplslist$numerator], 
+                                     1, function(x) sum(x == 0))
+    alldata2['0counts_den'] <- apply(alldata[,Samplslist$denominator], 
+                                     1, function(x) sum(x == 0))
+    
+    ## percentage of counts
+    alldata2['0counts.perc_num'] <- apply(alldata2[,Samplslist$numerator], 
+                                          1, function(x) sum(x == 0))/length(Samplslist$numerator)*100
+    
+    alldata2['0counts.perc_den'] <- apply(alldata2[,Samplslist$denominator], 
+                                          1, function(x) sum(x == 0))/length(Samplslist$denominator)*100
+    
+    
+    list_cols <- c("Gene", "baseMean", "baseMean_num", 
+                   "baseMean_den", "0counts_num", "0counts.perc_num", 
+                   "0counts_den", "0counts.perc_den", 
+                   "log2FoldChange", "lfcSE", "pvalue", "padj")
+    
+    alldata2 <- alldata2[,c(list_cols, Samplslist$numerator, Samplslist$denominator)]
+    
+    
+    library(openxlsx)
+    
+    DE.filename <- file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting.xlsx"))
+    sheet_name <- paste0(comp_name, "_", numerator, "_vs_", denominator)
+    title_name <- paste0("Comparison for: ", comp_name, ": ", numerator, " vs. ", denominator)
+    
+    wb <- openxlsx::createWorkbook()
+    openxlsx::addWorksheet(wb, sheet_name)
+    openxlsx::writeData(wb, sheet_name, title_name, startRow = 2, startCol=2,rowNames = FALSE, keepNA=TRUE,na.string="NA")
+    openxlsx::writeData(wb, sheet_name, alldata2, startRow = 4, startCol=2, rowNames = FALSE, keepNA=TRUE,na.string="NA")
+    openxlsx::saveWorkbook(wb, DE.filename, overwrite = TRUE)
+  }
+  
+  print("List of samples in these comparison")
+  print(listOfSampls)
+  #--------------------------
+  
+  #--------------------------
   ## check if it is worth to continue, avoid error if missing sign.data
   #--------------------------
   print(length(rownames(sign.data)))
@@ -224,7 +315,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   if (length(rownames(sign.data)) < 2) {
     
     data2save<- list(
+      "alldata2" = alldata2,
       "alldata" = alldata,
+      "Samplslist" = Samplslist,
       #"dds_object" = dds_object,
       #"res"=res,
       "res_filtered" = res_filtered,
@@ -237,6 +330,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     save(data2save, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
     
     data2return<- list(
+      "alldata2" = alldata2,
+      "Samplslist" = Samplslist,
+      "alldata" = alldata,
       "res_filtered" = res_filtered,
       "sign.df"=sign.data,
       "sign.genes"=sign.data$Gene,
@@ -309,48 +405,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     # Plotting Top 50 significant DE genes with different normalization methods: 
     select <- rownames(sign.data)[1:50]
     select <- select[!is.na(select)] ## discard NA values
-    
-    ## Samples
-    comp_name <- comp_name$category
-    comp_name <- sub("\\.", "-", comp_name)
-    
-    numerator <- numerator$cmp1
-    numerator <- sub("\\.", "-", numerator)
-    
-    denominator <- denominator$cmp2
-    denominator <- sub("\\.", "-", denominator)
-    
-    print("Hi there!")
-    
-    listOfSampls <- c()
-    
-    if (denominator=="reference") {
-      
-      listOfSampls <- c("None")
-      
-    } else {
-      print("Comparison: ")
-      print(comp_name)
-      
-      print("numerator: ")
-      print(numerator)
-      
-      print("denominator: ")
-      print(denominator)
-      
-      print("Samples: ")
-      subsheet <- df_treatment_Ind[comp_name]
-      colnames(subsheet)[1] <- 'comp_name'
-      #print(subsheet)
-      
-      listOfSampls <- c(rownames(subset(subsheet, comp_name==numerator)),
-                        rownames(subset(subsheet, comp_name==denominator)))
-      
-    }
-    
-    print(listOfSampls)
-    print("HI there")
-    
     
     if ( length(select) > 5 ) {
       
@@ -457,6 +511,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     ######################################################################
     
     data2save <- list(
+      "alldata2" = alldata2,
+      "Samplslist" = Samplslist,
       "alldata" = alldata,
       "data2pca" = data2pca,
       "rld" = rld,
@@ -474,6 +530,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     save(data2save, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
     
     data2return <- list(
+      "alldata2" = alldata2,
+      "Samplslist" = Samplslist,
+      "alldata" = alldata,
       "res_filtered"=res_filtered,
       "sign.df"=sign.data,
       "sign.genes"=sign.data$Gene,
@@ -485,7 +544,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   return(data2return)  
   
 }
-
 
 
 
