@@ -293,7 +293,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     library(openxlsx)
     
     DE.filename <- file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting.xlsx"))
-    sheet_name <- paste0(comp_name, "_", numerator, "_vs_", denominator)
+    sheet_name <- paste0(numerator, "_vs_", denominator)
     title_name <- paste0("Comparison for: ", comp_name, ": ", numerator, " vs. ", denominator)
     
     wb <- openxlsx::createWorkbook()
