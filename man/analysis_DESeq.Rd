@@ -11,6 +11,8 @@ analysis_DESeq(
   dfAnnotation,
   formula_given,
   int_threads = 2,
+  sign_value.given = 0.05,
+  LFC.given = log2(1.2),
   coef_n = NA,
   early_return = FALSE,
   comp_ID = NULL,
@@ -29,6 +31,10 @@ analysis_DESeq(
 \item{formula_given}{Design formula to use}
 
 \item{int_threads}{Number of threads to use}
+
+\item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
+
+\item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
 \item{coef_n}{Number of the coefficient of results to test \link{if desired}}
 

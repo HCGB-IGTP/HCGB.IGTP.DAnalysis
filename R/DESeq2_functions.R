@@ -34,11 +34,14 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
 #' @param OUTPUT_Data_dir Folder path to store results
 #' @param df_treatment_Ind Dataframe containing additional information for each sample
 #' @param threads Number of CPUs to use [Default: 2].
+#' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
+#' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @export
-
 DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
-                                OUTPUT_Data_dir, df_treatment_Ind, threads=2, forceResults=FALSE) {
+                                OUTPUT_Data_dir, df_treatment_Ind, threads=2, 
+                                sign_value.given = 0.05, LFC.given = log2(1.2),
+                                forceResults=FALSE) {
   
   #--------------------------
   # Packages
@@ -131,7 +134,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   #sign.data<-sign.data[!is.na(sign.data$padj),]
   #sign.data<-sign.data[abs(  sign.data$log2FoldChange)>log2(1.2),]
   
-  sign.data <- filter_signficant_DESEQ(alldata, sign_value = 0.05, LFC = log2(1.2))
+  sign.data <- filter_signficant_DESEQ(alldata, sign_value = sign_value.given, LFC = LFC.given)
   row.names(sign.data) <- sign.data$Gene
   
   # Results table in the same order than counting table
@@ -289,7 +292,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     #jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-volcano-plot.jpeg")), 1500, 1000, pointsize=20)
     volcano_main_title <- paste0("Volcano Plot: ", numerator, " vs ", denominator)
     volcan_plot <- EnhancedVolcano::EnhancedVolcano(alldata, x="log2FoldChange", y="padj", lab="",
-                                                    pCutoff=0.05, FCcutoff=log2(1.2), pointSize=3, labSize=6) + 
+                                                    pCutoff=sign_value.given, FCcutoff=LFC.given, pointSize=3, labSize=6) + 
       ggplot2::scale_x_continuous() + ggplot2::labs(title = volcano_main_title)
     
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
@@ -343,7 +346,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     if ( length(select) > 5 ) {
       
       ## plot rld
-      plot1 <- pheatmap(assay(rld)[select,], main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
+      plot1 <- pheatmap(assay(rld)[select,], 
+                        main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [FC]>", LFC.given),
                         cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                         annotation_col = df_treatment_Ind,
                         color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -355,7 +359,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       
       ## plot vsd
       #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
-      plot2 <- pheatmap(assay(vsd)[select,], main="Variance Stabilization Pheatmap (p.adj<0.05 and [FC]>1.2)",
+      plot2 <- pheatmap(assay(vsd)[select,], 
+                        main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [FC]>", LFC.given),
                         cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                         annotation_col = df_treatment_Ind,
                         color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -381,7 +386,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
           print(head(dataSubset))
           
           ## plot rld
-          plot3 <- pheatmap(dataSubset, main="Log Transformation Pheatmap (p.adj<0.05 and [FC]>1.2)",
+          plot3 <- pheatmap(dataSubset, 
+                            main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [FC]>", LFC.given),
                             cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                             annotation_col = df_treatment_Ind,
                             color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -394,7 +400,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
           ## plot vsd
           #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
           
-          plot4 <- pheatmap(dataSubset, main="Variance Stabilization Pheatmap (p.adj<0.05 and [FC]>1.2)",
+          plot4 <- pheatmap(dataSubset, 
+                            main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [FC]>", LFC.given),
                             cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                             annotation_col = df_treatment_Ind,
                             color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -659,8 +666,13 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param given_dir Output dir to use
 #' @param dfAnnotation Dataframe containing additional information for each sample
 #' @param int_threads Number of CPUs to use [Default: 2].
+#' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
+#' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @export
-relevel_function <- function(dds_object, category, reference, given_dir, dfAnnotation, int_threads=2, comp_ID.given="comp1"){
+relevel_function <- function(dds_object, category, reference, 
+                             given_dir, dfAnnotation, int_threads=2, 
+                             sign_value.given = 0.05, LFC.given = log2(1.2),
+                             comp_ID.given="comp1"){
   dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
   dds_object_releveled <- DESeq(dds_object, parallel = TRUE)
   
@@ -684,6 +696,7 @@ relevel_function <- function(dds_object, category, reference, given_dir, dfAnnot
         comp_name = listNames[1], 
         numerator = listNames[2], denominator = listNames[3],
         OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, 
+        sign_value.given = sign_value.given, LFC.given = LFC.given,
         threads = as.numeric(int_threads))
       
       ## save to return
@@ -896,9 +909,12 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param early_return Whether to return exploratory results early or not
 #' @param comp_ID Tag name to include for each comparison
 #' @param cutoff.given add an option to include cutoff when removing Zeros
+#' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
+#' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
                            dfAnnotation, formula_given, int_threads=2,
+                           sign_value.given = 0.05, LFC.given = log2(1.2),
                            coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9) {
   
   dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
@@ -962,6 +978,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   results_list = get_Results_DDS(dds_object = dds_object, 
                                  OUTPUT_Data_dir_given = OUTPUT_Data_dir_given, 
                                  dfAnnotation = dfAnnotation, comp_ID = comp_ID, 
+                                 sign_value.given = sign_value.given, LFC.given = LFC.given,
                                  int_threads = int_threads, coef_n = coef_n)
   #############
   
@@ -1082,8 +1099,11 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 #' @param comp_ID Tag name to include for each comparison
 #' @param int_threads Number of threads to use in the analysis
 #' @param coef_n Number of the coefficient of results to test [if desired]
+#' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
+#' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @export
 get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, comp_ID,
+                            sign_value.given = 0.05, LFC.given = log2(1.2),
                             int_threads=2, coef_n=NA) {
   ###########
   # Get results
@@ -1098,6 +1118,7 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
       dds_object = dds_object, coef_n = coef_n, comp_name = listNames[1], comp_ID = comp_ID,
       numerator = listNames[2], denominator = listNames[3],
       OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
+      sign_value.given = sign_value.given, LFC.given = LFC.given,
       threads = as.numeric(int_threads))
     
     ## save to return
@@ -1117,6 +1138,7 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
           dds_object = dds_object, coef_n = coef_name, comp_ID = comp_ID,
           comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
           OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
+          sign_value.given = sign_value.given, LFC.given = LFC.given,
           threads = as.numeric(int_threads))
         
         ## save results

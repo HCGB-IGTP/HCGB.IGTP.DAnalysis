@@ -9,6 +9,8 @@ get_Results_DDS(
   OUTPUT_Data_dir_given,
   dfAnnotation,
   comp_ID,
+  sign_value.given = 0.05,
+  LFC.given = log2(1.2),
   int_threads = 2,
   coef_n = NA
 )
@@ -21,6 +23,10 @@ get_Results_DDS(
 \item{dfAnnotation}{Dataframe with useful metadata to include}
 
 \item{comp_ID}{Tag name to include for each comparison}
+
+\item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
+
+\item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
 \item{int_threads}{Number of threads to use in the analysis}
 

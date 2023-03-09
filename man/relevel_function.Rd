@@ -11,6 +11,8 @@ relevel_function(
   given_dir,
   dfAnnotation,
   int_threads = 2,
+  sign_value.given = 0.05,
+  LFC.given = log2(1.2),
   comp_ID.given = "comp1"
 )
 }
@@ -26,6 +28,10 @@ relevel_function(
 \item{dfAnnotation}{Dataframe containing additional information for each sample}
 
 \item{int_threads}{Number of CPUs to use \link{Default: 2}.}
+
+\item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
+
+\item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 }
 \description{
 When running DESeq2 you sometimes require to relevel some comparisons

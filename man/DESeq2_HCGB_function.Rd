@@ -14,6 +14,8 @@ DESeq2_HCGB_function(
   OUTPUT_Data_dir,
   df_treatment_Ind,
   threads = 2,
+  sign_value.given = 0.05,
+  LFC.given = log2(1.2),
   forceResults = FALSE
 )
 }
@@ -31,6 +33,10 @@ DESeq2_HCGB_function(
 \item{df_treatment_Ind}{Dataframe containing additional information for each sample}
 
 \item{threads}{Number of CPUs to use \link{Default: 2}.}
+
+\item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
+
+\item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
 \item{name}{Name of the comparison}
 }
