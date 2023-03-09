@@ -231,7 +231,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     openxlsx::writeData(wb, sheet_name, alldata2, startRow = 4, startCol=2, rowNames = FALSE, keepNA=TRUE,na.string="NA")
     
     sheet_name2 <- "all.data"
-    openxlsx::addWorksheet(wb, sheet_name)
+    openxlsx::addWorksheet(wb, sheet_name2)
     openxlsx::writeData(wb, sheet_name2, paste0(title_name, ": all other samples included"), 
                         startRow = 2, startCol=2,rowNames = FALSE, keepNA=TRUE,na.string="NA")
     openxlsx::writeData(wb, sheet_name2, alldata, startRow = 4, startCol=2, rowNames = FALSE, keepNA=TRUE,na.string="NA")
