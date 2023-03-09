@@ -16,7 +16,8 @@ analysis_DESeq(
   coef_n = NA,
   early_return = FALSE,
   comp_ID = NULL,
-  cutoff.given = 0.9
+  cutoff.given = 0.9,
+  localFit = FALSE
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ analysis_DESeq(
 \item{comp_ID}{Tag name to include for each comparison}
 
 \item{cutoff.given}{add an option to include cutoff when removing Zeros}
+
+\item{localFit}{Use a fitType=local for mean dispersion fit in DESeq2}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them

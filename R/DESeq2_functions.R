@@ -912,11 +912,12 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param cutoff.given add an option to include cutoff when removing Zeros
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
+#' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
                            dfAnnotation, formula_given, int_threads=2,
                            sign_value.given = 0.05, LFC.given = log2(1.2),
-                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9) {
+                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, localFit=FALSE) {
   
   dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
   
@@ -942,8 +943,13 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
     countData = data_DESeq$counts,
     colData = data_DESeq$target, design = as.formula(formula_given) )
   
-  dds_object <- DESeq2::DESeq(ddsFullCountTable, parallel = TRUE)
-  
+  if (localFit) {
+    print("fitType = 'local'")
+    dds_object <- DESeq2::DESeq(ddsFullCountTable, parallel = TRUE, fitType = "local")
+  } else {
+    print("fitType = 'parametric'")
+    dds_object <- DESeq2::DESeq(ddsFullCountTable, parallel = TRUE)  
+  }
   
   ## check
   print("resultsNames(dds_object)")
