@@ -112,3 +112,15 @@ loader <- function(file2load) {
        name2load <- new.env())
   return(name2load)
 }
+
+#' Saves R sessionInfo data into file
+#' 
+#' This functions saves the configuration of the session into a txt file
+#' @param dir.given Absolute path to save file
+#' @export
+sessionInfo_write <- function(dir.given) {
+  writeLines(capture.output(sessionInfo()), file.path(dir.given, "sessionInfo.txt"))  
+}
+
+
+

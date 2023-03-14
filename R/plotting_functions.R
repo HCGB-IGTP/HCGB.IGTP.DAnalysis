@@ -91,14 +91,22 @@ ggscatter_plotRegression <- function(data_all_given, x.given, y.given, title_str
     color4points = "blue"  
   }
   
-  
   p <- ggscatter(fit_model$model, y.given, x.given, add='reg.line', 
                  conf.int = TRUE, cor.coef = TRUE,  palette="jco", color = color4points, 
                  alpha = 0.6, ggtheme = theme_bw(), xlab = y.given) + 
-    stat_cor(label.x=median(fit_model$meth))
+    stat_cor(label.x.npc = "middle")
   
   # return plot
-  return(p)
+  
+  returninfo <- list(
+    "plot" = p,
+    "fit_model"=fit_model,
+    "summary"=sum,
+    "r.squared" = r.squared,
+    "pval" = pval
+  )
+  
+  return(returninfo)
 }
 
 #' Grid plots using ggscatter regression
