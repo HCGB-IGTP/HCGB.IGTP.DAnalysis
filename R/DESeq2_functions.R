@@ -165,6 +165,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   if (denominator=="reference") {
     
     listOfSampls <- c("None")
+    Samplslist <- list()
     
   } else {
     print("Comparison: ")
