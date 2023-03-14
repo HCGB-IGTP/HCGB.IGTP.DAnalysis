@@ -152,9 +152,10 @@ ggboxplot_scatter <- function(data_all_given, colName, y.coord) {
   comb_m <- combn(levels(factor(data_all_given[[colName]])), m = 2, simplify = TRUE)
   my_comp <- lapply(seq_len(ncol(comb_m)), function(i) comb_m[,i])
   
-  gg <- ggboxplot(data_all_given, x=colName, y=y.coord) + 
-    stat_compare_means(comparisons = my_comp) + 
-    stat_compare_means(method = "anova", color="red") + geom_boxplot(aes(fill=colName))
+  gg <- ggboxplot(data_all_given, x=colName, y=y.coord, fill=colName, add='jitter', palette="jama") + 
+    stat_compare_means(comparisons = my_comp, method = "wilcox.test") + 
+    stat_compare_means(color="red", label.y = max(data_all_given$y.coord)) + labs(title=y.coord)
+  
   
   return(gg)
   
