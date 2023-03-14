@@ -158,6 +158,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   denominator <- sub("\\.", "-", denominator)
   
   print("Hi there!")
+  alldata2 <- alldata
   
   listOfSampls <- c()
   
@@ -190,8 +191,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     
     ## Get data for this samples
     ## 
-    
-    alldata2 <- alldata
     
     ## add basemean for each category
     alldata2['baseMean_num'] <- rowMeans(alldata[,Samplslist$numerator])

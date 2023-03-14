@@ -53,7 +53,8 @@ delete_na <- function(DF, n=0) {
 #' @param hg38ToHg19 Boolean to transfrom hg38 to hg19
 #' @export
 
-litfover_func <- function(df2convert, folderWithLiftoverInfo, hg19ToHg38=FALSE, hg38ToHg19=FALSE) {
+litfover_func <- function(df2convert, folderWithLiftoverInfo, 
+                          hg19ToHg38=FALSE, hg38ToHg19=FALSE) {
   library(rtracklayer)
   library(GenomicRanges)
   
@@ -98,4 +99,16 @@ litfover_func <- function(df2convert, folderWithLiftoverInfo, hg19ToHg38=FALSE, 
   
   
   return(df2convert)
+}
+
+#' Loads R data into variable
+#' 
+#' This functions loads a given RData object in a temporal environment and returns it
+#' @param file2load Absolute path to save RData file
+#' @export
+loader <- function(file2load) {
+  ## new_name <- loader(file2load = path_to_RData ))
+  load(file = file2load,
+       name2load <- new.env())
+  return(name2load)
 }
