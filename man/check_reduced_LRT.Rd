@@ -10,7 +10,8 @@ check_reduced_LRT(
   comp.folder.given,
   compID.given,
   dfAnnotation.given,
-  int_threads = 2
+  int_threads = 2,
+  forceResults = FALSE
 )
 }
 \arguments{
@@ -23,6 +24,8 @@ check_reduced_LRT(
 \item{compID.given}{Tag name to include for each comparison}
 
 \item{dfAnnotation.given}{Dataframe with useful metadata to include}
+
+\item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
 \description{
 Check reducing effect using LRT method.

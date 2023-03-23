@@ -17,7 +17,8 @@ analysis_DESeq(
   early_return = FALSE,
   comp_ID = NULL,
   cutoff.given = 0.9,
-  localFit = FALSE
+  localFit = FALSE,
+  forceResults = FALSE
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ analysis_DESeq(
 \item{cutoff.given}{add an option to include cutoff when removing Zeros}
 
 \item{localFit}{Use a fitType=local for mean dispersion fit in DESeq2}
+
+\item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them

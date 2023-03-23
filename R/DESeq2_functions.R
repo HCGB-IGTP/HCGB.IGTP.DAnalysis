@@ -36,6 +36,7 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
 #' @param threads Number of CPUs to use [Default: 2].
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
+#' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @export
 DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
@@ -669,11 +670,12 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param int_threads Number of CPUs to use [Default: 2].
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
+#' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @export
 relevel_function <- function(dds_object, category, reference, 
                              given_dir, dfAnnotation, int_threads=2, 
                              sign_value.given = 0.05, LFC.given = log2(1.2),
-                             comp_ID.given="comp1"){
+                             comp_ID.given="comp1", forceResults=FALSE){
   dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
   dds_object_releveled <- DESeq(dds_object, parallel = TRUE)
   
@@ -698,7 +700,7 @@ relevel_function <- function(dds_object, category, reference,
         numerator = listNames[2], denominator = listNames[3],
         OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, 
         sign_value.given = sign_value.given, LFC.given = LFC.given,
-        threads = as.numeric(int_threads))
+        threads = as.numeric(int_threads), forceResults = forceResults)
       
       ## save to return
       #print (head(res_dds))
@@ -762,9 +764,10 @@ get_all_data_DESeq2 <- function(dds_obj, coef_n, type="DESeq2") {
 #' @param comp.folder.given Absolute path to store results
 #' @param compID.given Tag name to include for each comparison
 #' @param dfAnnotation.given Dataframe with useful metadata to include
+#' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @export
 check_reduced_LRT <- function(dds_obj.given, formula_given, 
-                              comp.folder.given, compID.given, dfAnnotation.given, int_threads=2) {
+                              comp.folder.given, compID.given, dfAnnotation.given, int_threads=2, forceResults=FALSE) {
   
   ## LRT: Check reduction
   DEseq.red <- DESeq2::DESeq(object = dds_obj.given, test="LRT", 
@@ -781,7 +784,7 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
   DEseq.red.res <- get_Results_DDS(dds_object = DEseq.red, 
                                    OUTPUT_Data_dir_given = comp.folder.given, 
                                    comp_ID = compID.given,
-                                   dfAnnotation = dfAnnotation.given, int_threads = int_threads)
+                                   dfAnnotation = dfAnnotation.given, int_threads = int_threads, forceResults=forceResults)
   
   return(DEseq.red.res)
 }
@@ -797,7 +800,6 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
 #' @param dfAnnotation.given Dataframe with useful metadata to include
 #' @param comp.folder.given Absolute path to store results
 #' @param int_threads Number of threads to use
-
 #' @export
 check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.formula.given, 
                                compID.given, dfAnnotation.given, comp.folder.given, int_threads=2) {
@@ -913,11 +915,12 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
+#' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
                            dfAnnotation, formula_given, int_threads=2,
                            sign_value.given = 0.05, LFC.given = log2(1.2),
-                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, localFit=FALSE) {
+                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, localFit=FALSE, forceResults=FALSE) {
   
   dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
   
@@ -986,7 +989,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
                                  OUTPUT_Data_dir_given = OUTPUT_Data_dir_given, 
                                  dfAnnotation = dfAnnotation, comp_ID = comp_ID, 
                                  sign_value.given = sign_value.given, LFC.given = LFC.given,
-                                 int_threads = int_threads, coef_n = coef_n)
+                                 int_threads = int_threads, coef_n = coef_n, forceResults=forceResults)
   #############
   
   #############
@@ -1108,10 +1111,11 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 #' @param coef_n Number of the coefficient of results to test [if desired]
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
+#' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @export
 get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, comp_ID,
                             sign_value.given = 0.05, LFC.given = log2(1.2),
-                            int_threads=2, coef_n=NA) {
+                            int_threads=2, coef_n=NA, forceResults=FALSE) {
   ###########
   # Get results
   #############
@@ -1126,7 +1130,7 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
       numerator = listNames[2], denominator = listNames[3],
       OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
       sign_value.given = sign_value.given, LFC.given = LFC.given,
-      threads = as.numeric(int_threads))
+      threads = as.numeric(int_threads), forceResults=forceResults)
     
     ## save to return
     coef_name = as.character(resultsNames(dds_object)[coef_n])
@@ -1146,7 +1150,7 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
           comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
           OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
           sign_value.given = sign_value.given, LFC.given = LFC.given,
-          threads = as.numeric(int_threads))
+          threads = as.numeric(int_threads), forceResults=forceResults)
         
         ## save results
         results_list[[coef_name]] = res_dds

@@ -38,6 +38,8 @@ DESeq2_HCGB_function(
 
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
+\item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
+
 \item{name}{Name of the comparison}
 }
 \description{

@@ -12,7 +12,8 @@ get_Results_DDS(
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
   int_threads = 2,
-  coef_n = NA
+  coef_n = NA,
+  forceResults = FALSE
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ get_Results_DDS(
 \item{int_threads}{Number of threads to use in the analysis}
 
 \item{coef_n}{Number of the coefficient of results to test \link{if desired}}
+
+\item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them

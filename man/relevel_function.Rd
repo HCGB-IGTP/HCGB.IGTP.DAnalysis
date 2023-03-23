@@ -13,7 +13,8 @@ relevel_function(
   int_threads = 2,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
-  comp_ID.given = "comp1"
+  comp_ID.given = "comp1",
+  forceResults = FALSE
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ relevel_function(
 \item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
 
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
+
+\item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
 \description{
 When running DESeq2 you sometimes require to relevel some comparisons
