@@ -349,7 +349,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       
       ## plot rld
       plot1 <- pheatmap(assay(rld)[select,], 
-                        main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [FC]>", LFC.given),
+                        main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                         cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                         annotation_col = df_treatment_Ind,
                         color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -362,7 +362,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       ## plot vsd
       #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
       plot2 <- pheatmap(assay(vsd)[select,], 
-                        main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [FC]>", LFC.given),
+                        main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                         cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                         annotation_col = df_treatment_Ind,
                         color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -389,7 +389,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
           
           ## plot rld
           plot3 <- pheatmap(dataSubset, 
-                            main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [FC]>", LFC.given),
+                            main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                             cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                             annotation_col = df_treatment_Ind,
                             color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -403,7 +403,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
           #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
           
           plot4 <- pheatmap(dataSubset, 
-                            main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [FC]>", LFC.given),
+                            main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                             cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                             annotation_col = df_treatment_Ind,
                             color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -671,13 +671,21 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
+#' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
 #' @export
 relevel_function <- function(dds_object, category, reference, 
                              given_dir, dfAnnotation, int_threads=2, 
                              sign_value.given = 0.05, LFC.given = log2(1.2),
-                             comp_ID.given="comp1", forceResults=FALSE){
+                             comp_ID.given="comp1", forceResults=FALSE, localFit=FALSE){
+  ## relevel
   dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
-  dds_object_releveled <- DESeq(dds_object, parallel = TRUE)
+  
+  ## re-run dispersion fit
+  if (localFit) {
+    dds_object_releveled <- DESeq(dds_object, parallel = TRUE, fitType = "local")  
+  } else {
+    dds_object_releveled <- DESeq(dds_object, parallel = TRUE)
+  }
   
   # check
   print("resultsNames(dds_object)")
@@ -982,6 +990,15 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   }
   #############
   
+  ############ 
+  # Norm.counts
+  ############
+  # Save normalized values
+  # Normalized values
+  dds_object1 = HCGB.IGTP.DAnalysis::discard_lowCounts(dds_object = dds_object)
+  normValues <- counts(dds_object1, normalized=T)
+  write.table(normValues, file.path(OUTPUT_Data_dir_given, "NormValues_table.txt"), sep="\t", row.names=T, col.names=T, quote=T)
+
   ###########
   # Get results
   #############
@@ -1001,7 +1018,8 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
     "resultsNames" = resultsNames(dds_object),
     "dataDESeq" = data_DESeq,
     "formula" = formula_given,
-    "results" = results_list
+    "results" = results_list,
+    "normValues" = normValues
   )
   
   return(data2return)
@@ -1025,6 +1043,8 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
   ############################
   
   print('Inside exploratory plots')
+  
+  ## Create plot for different dispersions and return value of best fit
   
   # Dispersion plot 
   plotDisp <- plotDispEsts(dds_object.exp)

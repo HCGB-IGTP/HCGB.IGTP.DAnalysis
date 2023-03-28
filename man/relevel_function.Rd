@@ -14,7 +14,8 @@ relevel_function(
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
   comp_ID.given = "comp1",
-  forceResults = FALSE
+  forceResults = FALSE,
+  localFit = FALSE
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ relevel_function(
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
+
+\item{localFit}{Use a fitType=local for mean dispersion fit in DESeq2}
 }
 \description{
 When running DESeq2 you sometimes require to relevel some comparisons
