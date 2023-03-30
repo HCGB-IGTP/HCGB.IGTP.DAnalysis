@@ -150,13 +150,13 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   ## Samples
   #--------------------------
   comp_name <- comp_name$category
-  comp_name <- sub("\\.", "-", comp_name)
+  #comp_name <- sub("\\.", "-", comp_name)
   
   numerator <- numerator$cmp1
-  numerator <- sub("\\.", "-", numerator)
+  #numerator <- sub("\\.", "-", numerator)
   
   denominator <- denominator$cmp2
-  denominator <- sub("\\.", "-", denominator)
+  #denominator <- sub("\\.", "-", denominator)
   
   print("Hi there!")
   alldata2 <- alldata
@@ -997,7 +997,8 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   # Normalized values
   dds_object1 = HCGB.IGTP.DAnalysis::discard_lowCounts(dds_object = dds_object)
   normValues <- counts(dds_object1, normalized=T)
-  write.table(normValues, file.path(OUTPUT_Data_dir_given, "NormValues_table.txt"), sep="\t", row.names=T, col.names=T, quote=T)
+  normValues['Gene'] <- rownames(normValues)
+  write.table(normValues, file.path(OUTPUT_Data_dir_given, "NormValues_table.txt"), sep="\t", row.names=F, col.names=T, quote=T)
 
   ###########
   # Get results
