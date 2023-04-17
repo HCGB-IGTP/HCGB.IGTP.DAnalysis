@@ -100,6 +100,17 @@ get_GSEA_datasets <- function(species_given="Homo sapiens"){
   print("+ Download Pathway gene sets...")
   pathway_gene_sets <- msigdbr(species = species_given, category = "C2") ## curated gene sets
   
+  CGP_curated_gene_sets <- subset(pathway_gene_sets, gs_subcat=="CGP")
+  
+  ## NABA, SA, SIG, WNT_
+  CP_curated_gene_sets <- as.data.frame(subset(pathway_gene_sets, gs_subcat=="CP"))
+  
+  CP_Biocarta_curated_gene_sets <- as.data.frame(subset(pathway_gene_sets, gs_subcat=="CP:BIOCARTA"))
+  CP_KEGG_curated_gene_sets <- as.data.frame(subset(pathway_gene_sets, gs_subcat=="CP:KEGG"))
+  CP_PID_curated_gene_sets <- as.data.frame(subset(pathway_gene_sets, gs_subcat=="CP:PID"))
+  CP_REACTOME_curated_gene_sets <- as.data.frame(subset(pathway_gene_sets, gs_subcat=="CP:REACTOME"))
+  CP_WIKI_curated_gene_sets <- as.data.frame(subset(pathway_gene_sets, gs_subcat=="CP:WIKIPATHWAYS"))
+  
   ## regulatory databases
   print("+ Download Regulatory gene sets...")
   regulatory_gene_sets <- msigdbr(species = species_given, category = "C3") ## regulatory
@@ -114,7 +125,24 @@ get_GSEA_datasets <- function(species_given="Homo sapiens"){
   GO_CC_msigdbr_list = split(x=GO_CC_ontology_gene_sets$gene_symbol, f=GO_CC_ontology_gene_sets$gs_name)
   GO_MF_msigdbr_list = split(x=GO_MF_ontology_gene_sets$gene_symbol, f=GO_MF_ontology_gene_sets$gs_name)
   
-  pathway_msigdbr_list = split(x=pathway_gene_sets$gene_symbol, f=pathway_gene_sets$gs_name)
+  CGP_curated_gene_sets_list = split(x=CGP_curated_gene_sets$gene_symbol, 
+                                     f=CGP_curated_gene_sets$gs_name)
+  
+  CP_curated_gene_sets_list = split(x=CP_curated_gene_sets$gene_symbol, 
+                                    f=CP_curated_gene_sets$gs_name)
+  
+  CP_Biocarta_curated_gene_sets_list = split(x=CP_Biocarta_curated_gene_sets$gene_symbol, 
+                                             f=CP_Biocarta_curated_gene_sets$gs_name)
+  CP_KEGG_curated_gene_sets_list = split(x=CP_KEGG_curated_gene_sets$gene_symbol, 
+                                         f=CP_KEGG_curated_gene_sets$gs_name)
+  CP_REACTOME_curated_gene_sets_list = split(x=CP_REACTOME_curated_gene_sets$gene_symbol, 
+                                             f=CP_REACTOME_curated_gene_sets$gs_name)
+  CP_PID_curated_gene_sets_list = split(x=CP_PID_curated_gene_sets$gene_symbol, 
+                                        f=CP_PID_curated_gene_sets$gs_name)
+  CP_WIKI_curated_gene_sets_list = split(x=CP_WIKI_curated_gene_sets$gene_symbol, 
+                                         f=CP_WIKI_curated_gene_sets$gs_name)
+  
+  
   
   regulatory_msigdbr_list = split(x=regulatory_gene_sets$gene_symbol, f=regulatory_gene_sets$gs_name)
   
@@ -129,7 +157,14 @@ get_GSEA_datasets <- function(species_given="Homo sapiens"){
     "GO_BP" = GO_BP_msigdbr_list,
     "GO_CC" = GO_CC_msigdbr_list,
     "GO_MF" = GO_MF_msigdbr_list,
-    "pathway" = pathway_msigdbr_list,
+    "C2_CGP_curated" = CGP_curated_gene_sets_list,
+    "C2_CP_curated_left"=CP_curated_gene_sets_list,
+    "C2_BIOCARTA"=CP_Biocarta_curated_gene_sets_list,
+    "C2_KEGG"=CP_KEGG_curated_gene_sets_list,
+    "C2_REACTOME"=CP_REACTOME_curated_gene_sets_list,
+    "C2_PID"=CP_PID_curated_gene_sets_list,
+    "C2_WIKI"=CP_WIKI_curated_gene_sets_list,
+    
     "regulatory" = regulatory_msigdbr_list
   )
   
