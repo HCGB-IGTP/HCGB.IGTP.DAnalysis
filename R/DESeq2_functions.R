@@ -1090,7 +1090,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
   # ## PCA
   pdf(file.path(OUTPUT_dir,"PCA_multiple.pdf"), paper = "A4r", width = 35, height = 12)
   list_pca <- list()
-  for (gr in list_of_cols) {
+  for (gr in colnames(dfAnnotation_df)) {
     plt_pca <- plotPCA(vsd, intgroup=gr) + ggtitle(gr) + 
       ggrepel::geom_text_repel(label=rownames(dfAnnotation_df)) + theme_classic()
     list_pca[[gr]] <- plt_pca
@@ -1120,6 +1120,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
   return(plots2return)
   
 }
+
 
 
 #' Generate results given a DDS object
