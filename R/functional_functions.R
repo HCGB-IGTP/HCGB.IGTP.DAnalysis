@@ -108,7 +108,6 @@ get_GSEA_datasets <- function(species_given="Homo sapiens"){
   ## create list for FGSEA
   ## ---------------------
   h_msigdbr_list = split(x=hallmark_gene_sets$gene_symbol, f=hallmark_gene_sets$gs_name)
-  
   i_msigdbr_list = split(x=immunesigdb_gene_sets$gene_symbol, f=immunesigdb_gene_sets$gs_name)
   
   GO_BP_msigdbr_list = split(x=GO_BP_ontology_gene_sets$gene_symbol, f=GO_BP_ontology_gene_sets$gs_name)
@@ -253,7 +252,7 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
     for (dataSet in names(dataSet.list)) {
       
       print(paste0("+ Analysis for: ", dataSet))
-      FGSEA_data <- FGSEA_GSEA(na.omit(gene_list_ranked), GSEA_datasets[[dataSet]], 
+      FGSEA_data <- FGSEA_GSEA(na.omit(gene_list_ranked), dataSet.list[[dataSet]], 
                                title_given = paste0(name_given, 
                                                     " ranked by ", 
                                                     as.character(ranker), 

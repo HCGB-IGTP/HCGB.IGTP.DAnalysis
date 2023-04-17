@@ -557,6 +557,7 @@ adjust_samples <- function(counts, target){
   
   print ("** Match:")
   print (match(rownames(target), colnames(counts)))
+  print (rownames(target) == colnames(counts))
   
   list2return <- list("counts" = counts, 
                       "target" = target)
