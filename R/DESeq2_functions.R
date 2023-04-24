@@ -166,7 +166,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   
   if (denominator=="reference") {
     
-    listOfSampls <- c("None")
+    listOfSampls = NULL
     Samplslist <- list()
     
   } else {
@@ -186,6 +186,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     
     listOfSampls <- c(rownames(subset(subsheet, comp_name==numerator)),
                       rownames(subset(subsheet, comp_name==denominator)))
+    
+    print("List of samples in these comparison")
+    print(listOfSampls)
     
     Samplslist <- list(
       numerator = rownames(subset(subsheet, comp_name==numerator)),
@@ -250,11 +253,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     ## add data with all counts
     ##
     openxlsx::saveWorkbook(wb, DE.filename, overwrite = TRUE)
+    
   }
   
-  print("List of samples in these comparison")
-  print(listOfSampls)
-  #--------------------------
   
   #--------------------------
   ## check if it is worth to continue, avoid error if missing sign.data
@@ -383,10 +384,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                     plot_given = plot2)
       
       
-      if (listOfSampls[1]=="None") {
-        print("")
+      if (!is.null(listOfSampls)) {
         
-      } else {
         ## Only samples included in comparison
         dataSubset <- try(assay(vsd)[select,listOfSampls], silent = TRUE)
         
@@ -494,6 +493,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   return(data2return)  
   
 }
+
 
 
 
