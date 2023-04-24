@@ -800,7 +800,8 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
   DEseq.red.res <- get_Results_DDS(dds_object = DEseq.red, 
                                    OUTPUT_Data_dir_given = comp.folder.given, 
                                    comp_ID = compID.given,
-                                   dfAnnotation = dfAnnotation.given, int_threads = int_threads, forceResults=forceResults)
+                                   dfAnnotation = dfAnnotation.given, 
+                                   int_threads = int_threads, forceResults=forceResults)
   
   return(DEseq.red.res)
 }
@@ -813,12 +814,11 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
 #' @param list.terms List of terms from samplesheet to include in design matrix
 #' @param red.formula.given Design formula to use as naive and in reduction
 #' @param compID.given Tag name to include for each comparison
-#' @param dfAnnotation.given Dataframe with useful metadata to include
 #' @param comp.folder.given Absolute path to store results
 #' @param int_threads Number of threads to use
 #' @export
 check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.formula.given, 
-                               compID.given, dfAnnotation.given, comp.folder.given, int_threads=2) {
+                               compID.given, comp.folder.given, int_threads=2) {
   
   resulst_list <- list()
   
@@ -833,7 +833,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   
   naive_res <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
                               count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
-                              int_threads = int_threads, dfAnnotation = dfAnnotation.given, 
+                              int_threads = int_threads,  
                               formula_given = as.formula(paste0("~", red.formula.given)), 
                               early_return = FALSE, comp_ID = paste0(compID.given, ".naive"))
   
@@ -861,7 +861,6 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                     count_table = countsGiven, 
                                     sample_sheet_given = sampleSheet.given, 
                                     int_threads = int_threads, 
-                                    dfAnnotation = dfAnnotation.given, 
                                     formula_given = as.formula(paste0("~", term, "+", red.formula.given)), 
                                     early_return = FALSE, 
                                     comp_ID = comp_ID.here)
@@ -882,7 +881,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                                              formula_given = as.formula(paste0("~", red.formula.given)),
                                                              comp.folder.given = comp.folder.given, 
                                                              compID.given = paste0(comp_ID.here, ".red"), 
-                                                             dfAnnotation.given = dfAnnotation.given)
+                                                             dfAnnotation.given = sampleSheet.given)
     
   }
   ##--------------------------
@@ -900,8 +899,10 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   
   resulst_list[["complex"]] = analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
                                              count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
-                                             int_threads = int_threads, dfAnnotation = dfAnnotation.given, 
-                                             formula_given = as.formula(paste0("~", paste(list.terms, "+ ", collapse = ""), red.formula.given)), 
+                                             int_threads = int_threads, 
+                                             formula_given = as.formula(paste0("~", 
+                                                                               paste(list.terms, "+ ", 
+                                                                                     collapse = ""), red.formula.given)), 
                                              early_return = FALSE, 
                                              comp_ID = paste0(compID.given, ".complex"))
   
