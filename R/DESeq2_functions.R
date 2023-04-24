@@ -982,11 +982,10 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   exploratory_plots_dir <- file.path(OUTPUT_Data_dir_given, paste0(comp_ID, "exploratory_plots"))
   dir.create(exploratory_plots_dir, showWarnings = FALSE)
   
-  exploratory_plots_returned <- ""
-  #exploratory_plots_returned <- exploratory_plots(dds_object.exp = dds_object, 
-  #                                                OUTPUT_dir = exploratory_plots_dir, 
-  #                                               dfAnnotation_df = sample_sheet_given, 
-  #                                               list_of_cols = list_of_cols)
+  exploratory_plots_returned <- exploratory_plots(dds_object.exp = dds_object, 
+                                                  OUTPUT_dir = exploratory_plots_dir, 
+                                                 dfAnnotation_df = sample_sheet_given, 
+                                                 list_of_cols = list_of_cols)
   print('Out Exploratory plots')
   #############
   
