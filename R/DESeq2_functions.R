@@ -28,20 +28,23 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
 #' This functions plots pvalues original and after filtering
 #' @param dds_object DESeq2 object
 #' @param coef_n Coefficient number obtain using resultsName(dds)
-#' @param name Name of the comparison
+#' @param comp_name Name of the comparison
+#' @param comp_ID ID tag of the comparison
 #' @param numerator Name of the numerator comparison
 #' @param denominator Name of the denominator comparison
 #' @param OUTPUT_Data_dir Folder path to store results
 #' @param df_treatment_Ind Dataframe containing additional information for each sample
+#' @param list_of_cols Set of columns with important information in df_treatment_ind 
 #' @param threads Number of CPUs to use [Default: 2].
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
+#' @param gene.annot.df Dataframe containing gene annotation (Default: NULL)
 #' @export
 DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
-                                OUTPUT_Data_dir, df_treatment_Ind, threads=2, 
-                                sign_value.given = 0.05, LFC.given = log2(1.2),
+                                OUTPUT_Data_dir, df_treatment_Ind, list_of_cols, threads=2, 
+                                sign_value.given = 0.05, LFC.given = log2(1.2), gene.annot.df=NULL,
                                 forceResults=FALSE) {
   
   #--------------------------
@@ -110,38 +113,36 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   #--------------------------
   # Write Results tables
   #--------------------------
-  ## write.table(res_filtered, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_table.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
-  
-  # Results table ordered by adjusted p-value
-  resOrdered <- res_filtered[order(res_filtered$padj),]
-  ## write.table(resOrdered, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_padj-ordered_table.txt")), sep="\t", row.names=T, col.names=NA, quote=F)
-  
-  # Save normalized values
-  # Normalized values
-  normValues <- counts(dds_object, normalized=T)
-  ## write.table(normValues, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_NormValues_table.txt")), sep="\t", row.names=T, col.names=T, quote=F)
   
   ## Merge normalized values and differential expression
-  alldata <- merge(as.data.frame(counts(dds_object, normalized=TRUE)), as.data.frame(res_filtered), by="row.names", sort=FALSE)
-  names(alldata)[1] <- "Gene"
+  alldata <- merge(as.data.frame(counts(dds_object, normalized=TRUE)), as.data.frame(res_filtered), by="row.names")
+  rownames(alldata) <- alldata$Row.names
+  alldata$Row.names <- NULL
+  #names(alldata)[1] <- "Gene"
+  
+  if (!is.null(gene.annot.df)) {
+    alldata <- merge(gene.annot.df, alldata, by='row.names')
+    rownames(alldata) <- alldata$Row.names
+    alldata$Row.names <- NULL
+  }
+  
+  Gene <- rownames(alldata)
+  alldata <- cbind(Gene, alldata)
+  print(head(alldata))
+  
   ## Write results
   write.table(alldata, file=file.path(OUTPUT_Data_sample, 
-                                      paste0(file_name, "-ResultsCounting_NormValues-and-DE_table.txt")), sep="\t", 
-              row.names=T, col.names=NA, quote=T)
+                                      paste0(file_name, "-ResultsCounting_NormValues-and-DE_table.txt")), 
+              sep="\t", quote=T, row.names = F)
   
   ##get significant data only with counts in all samples
-  ##get significant data only padj < 0.05 and log2FoldChange >1.2
-  #sign.data<-alldata[alldata$padj<0.05,]
-  #sign.data<-sign.data[!is.na(sign.data$padj),]
-  #sign.data<-sign.data[abs(  sign.data$log2FoldChange)>log2(1.2),]
-  
   sign.data <- filter_signficant_DESEQ(alldata, sign_value = sign_value.given, LFC = LFC.given)
   row.names(sign.data) <- sign.data$Gene
   
   # Results table in the same order than counting table
   write.table(sign.data, 
               file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_table_SignificantDE.txt")), 
-              sep="\t", row.names=T, col.names=NA, quote=TRUE)
+              sep="\t", quote=T, row.names = F)
   
   
   #--------------------------
@@ -205,17 +206,26 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                      1, function(x) sum(x == 0))
     
     ## percentage of counts
-    alldata2['0counts.perc_num'] <- apply(alldata2[,Samplslist$numerator], 
-                                          1, function(x) sum(x == 0))/length(Samplslist$numerator)*100
+    alldata2['0counts.perc_num'] <- round(apply(alldata2[,Samplslist$numerator], 
+                                                1, function(x) sum(x == 0))/length(Samplslist$numerator)*100, digits = 2)
     
-    alldata2['0counts.perc_den'] <- apply(alldata2[,Samplslist$denominator], 
-                                          1, function(x) sum(x == 0))/length(Samplslist$denominator)*100
+    alldata2['0counts.perc_den'] <- round(apply(alldata2[,Samplslist$denominator], 
+                                                1, function(x) sum(x == 0))/length(Samplslist$denominator)*100, digits = 2)
     
-    
-    list_cols <- c("Gene", "baseMean", "baseMean_num", 
-                   "baseMean_den", "0counts_num", "0counts.perc_num", 
-                   "0counts_den", "0counts.perc_den", 
-                   "log2FoldChange", "lfcSE", "pvalue", "padj")
+    if (!is.null(gene.annot.df)) {
+      
+      list_cols <- c("Gene", "ensembl_gene_id", "hgnc_symbol", "description", "gene_biotype", "baseMean", "baseMean_num", 
+                     "baseMean_den", "0counts_num", "0counts.perc_num", 
+                     "0counts_den", "0counts.perc_den", 
+                     "log2FoldChange", "lfcSE", "pvalue", "padj")
+      
+    } else {
+      list_cols <- c("Gene", "baseMean", "baseMean_num", 
+                     "baseMean_den", "0counts_num", "0counts.perc_num", 
+                     "0counts_den", "0counts.perc_den", 
+                     "log2FoldChange", "lfcSE", "pvalue", "padj")
+      
+    }
     
     alldata2 <- alldata2[,c(list_cols, Samplslist$numerator, Samplslist$denominator)]
     
@@ -251,7 +261,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   #--------------------------
   print(length(rownames(sign.data)))
   
-  if (length(rownames(sign.data)) < 2) {
+  if (length(rownames(sign.data)) < 1) {
     
     data2save<- list(
       "alldata2" = alldata2,
@@ -306,7 +316,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     #--------------------------
     
     ## rlog transformation
-    rld <- DESeq2::rlogTransformation(dds_object)
+    #rld <- DESeq2::rlogTransformation(dds_object)
     
     # variance stabilizing
     vsd <- DESeq2::varianceStabilizingTransformation(dds_object, blind = FALSE)
@@ -340,37 +350,36 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     ### Pheatmap top50 DE genes
     #--------------------------
     
-    
-    # Plotting Top 50 significant DE genes with different normalization methods: 
+    print("Plotting Top 50 significant DE genes with different normalization methods")
+    # Plotting Top 50 significant DE genes with different normalization methods:
     select <- rownames(sign.data)[1:50]
     select <- select[!is.na(select)] ## discard NA values
     
     if ( length(select) > 5 ) {
       
       ## plot rld
-      plot1 <- pheatmap(assay(rld)[select,], 
-                        main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
-                        cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-                        annotation_col = df_treatment_Ind,
-                        color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
-                        scale="row" ## centered and scale values per row
-      )
-      HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                    name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation_allSamples"), 
-                                    plot_given = plot1)
+      #plot1 <- pheatmap(assay(rld)[select,],
+      #                  main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
+      #                  cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
+      #                  annotation_col = df_treatment_Ind[,list_of_cols],
+      #                  color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
+      #                  scale="row" ## centered and scale values per row
+      #)
+      #HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample,
+      #                              name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation_allSamples"),
+      #                              plot_given = plot1)
       
       ## plot vsd
-      #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
-      plot2 <- pheatmap(assay(vsd)[select,], 
+      plot2 <- pheatmap(assay(vsd)[select,],
                         main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                         cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-                        annotation_col = df_treatment_Ind,
-                        color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
+                        annotation_col = df_treatment_Ind[,list_of_cols],
+                        color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
                         scale="row" ## centered and scale values per row7
       )
       
-      HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                    name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz_allSamples"), 
+      HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample,
+                                    name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz_allSamples"),
                                     plot_given = plot2)
       
       
@@ -379,7 +388,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
         
       } else {
         ## Only samples included in comparison
-        dataSubset <- try(assay(rld)[select,listOfSampls], silent = TRUE)
+        dataSubset <- try(assay(vsd)[select,listOfSampls], silent = TRUE)
         
         if (exists("dataSubset")) {
           
@@ -388,35 +397,33 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
           print(head(dataSubset))
           
           ## plot rld
-          plot3 <- pheatmap(dataSubset, 
-                            main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
-                            cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-                            annotation_col = df_treatment_Ind,
-                            color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
-                            scale="row" ## centered and scale values per row
-          )
-          save_pdf(folder_path = OUTPUT_Data_sample, 
-                   name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"), 
-                   plot_given = plot3)
+          #plot3 <- pheatmap(dataSubset,
+          #                  main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
+          #                  cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
+          #                  annotation_col = df_treatment_Ind[,list_of_cols],
+          #                  color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
+          #                  scale="row" ## centered and scale values per row
+          #)
+          #save_pdf(folder_path = OUTPUT_Data_sample,
+          #         name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"),
+          #         plot_given = plot3)
           
           ## plot vsd
-          #pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz.pdf")), width=15, height=12)
-          
-          plot4 <- pheatmap(dataSubset, 
+          plot4 <- pheatmap(dataSubset,
                             main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                             cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-                            annotation_col = df_treatment_Ind,
-                            color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
+                            annotation_col = df_treatment_Ind[,list_of_cols],
+                            color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
                             scale="row" ## centered and scale values per row7
           )
-          save_pdf(folder_path = OUTPUT_Data_sample, 
-                   name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"), 
+          save_pdf(folder_path = OUTPUT_Data_sample,
+                   name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"),
                    plot_given = plot4)
-        }  
+        }
         
       }
       
-    } 
+    }
     #--------------------------
     
     #--------------------------
@@ -429,7 +436,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     pca_res <- stats::prcomp(as.matrix(data2pca))
     
     pdf(file.path(OUTPUT_Data_sample,"PCA_multiple.pdf"))
-    for (i in colnames(df_treatment_Ind)) {
+    for (i in colnames(df_treatment_Ind[,list_of_cols])) {
       p<-autoplot(pca_res, 
                   data=df_treatment_Ind, 
                   colour=i) + 
@@ -458,7 +465,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       "Samplslist" = Samplslist,
       "alldata" = alldata,
       "data2pca" = data2pca,
-      "rld" = rld,
+      #"rld" = rld, ## It takes too much time
       "vsd" = vsd,
       "volcan_plot" = volcan_plot,
       #"dds_object" = dds_object,
@@ -914,22 +921,23 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param sample_sheet_given Samplesheet containing metadata information
 #' @param count_table Dataframe/matrix of counts
 #' @param OUTPUT_Data_dir_given Absolute path to store results
-#' @param dfAnnotation Dataframe with useful metadata to include
 #' @param int_threads Number of threads to use
 #' @param formula_given Design formula to use
 #' @param coef_n Number of the coefficient of results to test [if desired]
 #' @param early_return Whether to return exploratory results early or not
 #' @param comp_ID Tag name to include for each comparison
 #' @param cutoff.given add an option to include cutoff when removing Zeros
-#' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
+#' @param sign_value.given Adjusted pvalue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
+#' @param gene.annot Dataframe containing gene annotation (Default: NULL)
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
-                           dfAnnotation, formula_given, int_threads=2,
+                           list_of_cols, formula_given, int_threads=2,
                            sign_value.given = 0.05, LFC.given = log2(1.2),
-                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, localFit=FALSE, forceResults=FALSE) {
+                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, 
+                           localFit=FALSE, forceResults=FALSE, gene.annot=NULL) {
   
   dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
   
@@ -940,7 +948,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
     "counts"=HCGB.IGTP.DAnalysis::discard_0_counts(countsF = count_table, cutoff = cutoff.given),
     "target"=sample_sheet_given
   )
-  data_DESeq <- HCGB.IGTP.DAnalysis::adjust_samples(data_DESeq$counts, data_DESeq$target)
+  data_DESeq <- adjust_samples(data_DESeq$counts, data_DESeq$target)
   
   
   ## Set parallel threads
@@ -971,15 +979,14 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   ## exploratory dds_object
   #############
   print("Exploratory plots")
-  exploratory_plots_dir <- file.path(OUTPUT_Data_dir_given, paste0(comp_ID, "_exploratory_plots"))
+  exploratory_plots_dir <- file.path(OUTPUT_Data_dir_given, paste0(comp_ID, "exploratory_plots"))
   dir.create(exploratory_plots_dir, showWarnings = FALSE)
   
-  print(dim(sample_sheet_given))
-  
-  exploratory_plots_returned <- exploratory_plots(dds_object.exp = dds_object, 
-                                                  OUTPUT_dir = exploratory_plots_dir, 
-                                                  dfAnnotation_df = sample_sheet_given, 
-                                                  list_of_cols = colnames(dfAnnotation))
+  exploratory_plots_returned <- ""
+  #exploratory_plots_returned <- exploratory_plots(dds_object.exp = dds_object, 
+  #                                                OUTPUT_dir = exploratory_plots_dir, 
+  #                                               dfAnnotation_df = sample_sheet_given, 
+  #                                               list_of_cols = list_of_cols)
   print('Out Exploratory plots')
   #############
   
@@ -997,17 +1004,30 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   # Save normalized values
   # Normalized values
   dds_object1 = HCGB.IGTP.DAnalysis::discard_lowCounts(dds_object = dds_object)
+  
   normValues <- counts(dds_object1, normalized=T)
-  normValues['Gene'] <- rownames(normValues)
+  print(head(normValues))
+  
+  if (!is.null(gene.annot)) {
+    normValues <- merge(gene.annot, normValues, by='row.names')
+    print(head(normValues))
+    rownames(normValues) <- normValues$Row.names
+    normValues$Row.names <- NULL
+    print("## Add annotation")
+    print(head(normValues))
+  }
+  
+  Gene <- rownames(normValues)
+  normValues <- cbind(Gene, normValues)
   write.table(normValues, file.path(OUTPUT_Data_dir_given, "NormValues_table.txt"), sep="\t", row.names=F, col.names=T, quote=T)
-
+  
   ###########
   # Get results
   #############
   results_list = get_Results_DDS(dds_object = dds_object, 
                                  OUTPUT_Data_dir_given = OUTPUT_Data_dir_given, 
-                                 dfAnnotation = dfAnnotation, comp_ID = comp_ID, 
-                                 sign_value.given = sign_value.given, LFC.given = LFC.given,
+                                 dfAnnotation = sample_sheet_given, list_of_cols, comp_ID = comp_ID, 
+                                 sign_value.given = sign_value.given, LFC.given = LFC.given, gene.annot=gene.annot,
                                  int_threads = int_threads, coef_n = coef_n, forceResults=forceResults)
   #############
   
@@ -1026,6 +1046,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   
   return(data2return)
 }
+
 
 #' Exploratory plots for DESEQ2 analysis
 #' 
@@ -1083,6 +1104,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
   # Get sample-to-sample distances
   distsRL <- dist(t(assay(vsd)))
   mat <- as.matrix(distsRL)
+  
   sampleDist <- pheatmap(mat, annotation = dfAnnotation_df[,list_of_cols])
   save_pdf(folder_path = OUTPUT_dir, name_file = "heatmap_samplesDistance",
            plot_given = sampleDist)
@@ -1091,6 +1113,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
   pdf(file.path(OUTPUT_dir,"PCA_multiple.pdf"), paper = "A4r", width = 35, height = 12)
   list_pca <- list()
   for (gr in colnames(dfAnnotation_df)) {
+    print(paste0("Printing PCA for ", gr))
     plt_pca <- plotPCA(vsd, intgroup=gr) + ggtitle(gr) + 
       ggrepel::geom_text_repel(label=rownames(dfAnnotation_df)) + theme_classic()
     list_pca[[gr]] <- plt_pca
@@ -1122,7 +1145,6 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 }
 
 
-
 #' Generate results given a DDS object
 #' 
 #' When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
@@ -1135,10 +1157,11 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
+#' @param gene.annot Dataframe containing gene annotation (Default: NULL)
 #' @export
-get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, comp_ID,
+get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, list_of_cols, comp_ID,
                             sign_value.given = 0.05, LFC.given = log2(1.2),
-                            int_threads=2, coef_n=NA, forceResults=FALSE) {
+                            int_threads=2, coef_n=NA, forceResults=FALSE, gene.annot=NULL) {
   ###########
   # Get results
   #############
@@ -1152,8 +1175,9 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
       dds_object = dds_object, coef_n = coef_n, comp_name = listNames[1], comp_ID = comp_ID,
       numerator = listNames[2], denominator = listNames[3],
       OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
+      list_of_cols = list_of_cols,
       sign_value.given = sign_value.given, LFC.given = LFC.given,
-      threads = as.numeric(int_threads), forceResults=forceResults)
+      threads = as.numeric(int_threads), forceResults=forceResults, gene.annot.df = gene.annot)
     
     ## save to return
     coef_name = as.character(resultsNames(dds_object)[coef_n])
@@ -1171,9 +1195,9 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
         res_dds = DESeq2_HCGB_function(
           dds_object = dds_object, coef_n = coef_name, comp_ID = comp_ID,
           comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
-          OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
+          OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
           sign_value.given = sign_value.given, LFC.given = LFC.given,
-          threads = as.numeric(int_threads), forceResults=forceResults)
+          threads = as.numeric(int_threads), forceResults=forceResults, gene.annot=gene.annot)
         
         ## save results
         results_list[[coef_name]] = res_dds
@@ -1185,6 +1209,7 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, com
   
   return(results_list)
 }
+
 
 #' Check the rank of a design matrix
 #' 

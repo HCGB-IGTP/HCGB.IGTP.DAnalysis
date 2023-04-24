@@ -8,7 +8,7 @@ analysis_DESeq(
   OUTPUT_Data_dir_given,
   count_table,
   sample_sheet_given,
-  dfAnnotation,
+  list_of_cols,
   formula_given,
   int_threads = 2,
   sign_value.given = 0.05,
@@ -18,7 +18,8 @@ analysis_DESeq(
   comp_ID = NULL,
   cutoff.given = 0.9,
   localFit = FALSE,
-  forceResults = FALSE
+  forceResults = FALSE,
+  gene.annot = NULL
 )
 }
 \arguments{
@@ -28,13 +29,11 @@ analysis_DESeq(
 
 \item{sample_sheet_given}{Samplesheet containing metadata information}
 
-\item{dfAnnotation}{Dataframe with useful metadata to include}
-
 \item{formula_given}{Design formula to use}
 
 \item{int_threads}{Number of threads to use}
 
-\item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
+\item{sign_value.given}{Adjusted pvalue cutoff. Default=0.05,}
 
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
@@ -49,6 +48,8 @@ analysis_DESeq(
 \item{localFit}{Use a fitType=local for mean dispersion fit in DESeq2}
 
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
+
+\item{gene.annot}{Dataframe containing gene annotation (Default: NULL)}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them

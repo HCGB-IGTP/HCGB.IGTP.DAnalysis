@@ -122,5 +122,15 @@ sessionInfo_write <- function(dir.given) {
   writeLines(capture.output(sessionInfo()), file.path(dir.given, "sessionInfo.txt"))  
 }
 
-
+#' Convert Spanish date: 14/5/2022 into English american format: 2022-5-14
+#' 
+#' @param date_str String date to convert
+#' @export
+convertDate <- function(date_str) {
+  ## convert as data from Spanish Date to English Format: YYYYmmdd
+  ## 15-04-2022 -> 2022-04-15
+  return(str_split(date_str, "/") %>% unlist() %>% rev() %>% paste(collapse = '-'))
+  
+  ## Example: sapply(example_df$Date, convertDate)
+}
 

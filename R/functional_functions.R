@@ -261,10 +261,13 @@ plot_GSEA <- function(fgRes, title_given) {
 #' @export
 FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given, 
                             dataSet.list, GENE_SYMBOL.col="GENE_SYMBOL",  
-                            ranker.list=c("log2FoldChange", "padj"), padj.thres=0.25) {
+                            ranker.list=c("log2FoldChange", "signed.logPval"), padj.thres=0.25, create.signed.logPval=FALSE) {
   
   library(openxlsx)
   
+  if (create.signed.logPval) {
+    table_annot['signed.logPval'] <- sign(table_annot$log2FoldChange) * -log(table_annot$pvalue)  
+  }
   
   ## FGSEA analysis
   fgsea2return = list()

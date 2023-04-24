@@ -11,8 +11,9 @@ FGSEA_GSEA_loop(
   nproc_given,
   dataSet.list,
   GENE_SYMBOL.col = "GENE_SYMBOL",
-  ranker.list = c("log2FoldChange", "padj"),
-  padj.thres = 0.25
+  ranker.list = c("log2FoldChange", "signed.logPval"),
+  padj.thres = 0.25,
+  create.signed.logPval = FALSE
 )
 }
 \arguments{

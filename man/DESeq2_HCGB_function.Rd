@@ -13,9 +13,11 @@ DESeq2_HCGB_function(
   denominator = "example2",
   OUTPUT_Data_dir,
   df_treatment_Ind,
+  list_of_cols,
   threads = 2,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
+  gene.annot.df = NULL,
   forceResults = FALSE
 )
 }
@@ -23,6 +25,10 @@ DESeq2_HCGB_function(
 \item{dds_object}{DESeq2 object}
 
 \item{coef_n}{Coefficient number obtain using resultsName(dds)}
+
+\item{comp_name}{Name of the comparison}
+
+\item{comp_ID}{ID tag of the comparison}
 
 \item{numerator}{Name of the numerator comparison}
 
@@ -32,15 +38,17 @@ DESeq2_HCGB_function(
 
 \item{df_treatment_Ind}{Dataframe containing additional information for each sample}
 
+\item{list_of_cols}{Set of columns with important information in df_treatment_ind}
+
 \item{threads}{Number of CPUs to use \link{Default: 2}.}
 
 \item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
 
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
-\item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
+\item{gene.annot.df}{Dataframe containing gene annotation (Default: NULL)}
 
-\item{name}{Name of the comparison}
+\item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
 \description{
 This functions plots pvalues original and after filtering

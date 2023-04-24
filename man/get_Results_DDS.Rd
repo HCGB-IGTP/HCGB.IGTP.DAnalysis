@@ -8,12 +8,14 @@ get_Results_DDS(
   dds_object,
   OUTPUT_Data_dir_given,
   dfAnnotation,
+  list_of_cols,
   comp_ID,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
   int_threads = 2,
   coef_n = NA,
-  forceResults = FALSE
+  forceResults = FALSE,
+  gene.annot = NULL
 )
 }
 \arguments{
@@ -34,6 +36,8 @@ get_Results_DDS(
 \item{coef_n}{Number of the coefficient of results to test \link{if desired}}
 
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
+
+\item{gene.annot}{Dataframe containing gene annotation (Default: NULL)}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
