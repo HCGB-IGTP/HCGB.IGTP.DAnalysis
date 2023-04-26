@@ -9,10 +9,11 @@ check_terms_matrix(
   countsGiven,
   list.terms,
   red.formula.given,
+  list_of_cols,
   compID.given,
-  dfAnnotation.given,
   comp.folder.given,
-  int_threads = 2
+  int_threads = 2,
+  gene.annot.df = NULL
 )
 }
 \arguments{
@@ -25,8 +26,6 @@ check_terms_matrix(
 \item{red.formula.given}{Design formula to use as naive and in reduction}
 
 \item{compID.given}{Tag name to include for each comparison}
-
-\item{dfAnnotation.given}{Dataframe with useful metadata to include}
 
 \item{comp.folder.given}{Absolute path to store results}
 

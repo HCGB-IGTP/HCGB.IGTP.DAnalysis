@@ -10,7 +10,11 @@ check_reduced_LRT(
   comp.folder.given,
   compID.given,
   dfAnnotation.given,
+  list_of_cols,
   int_threads = 2,
+  sign_value.given = 0.05,
+  LFC.given = log2(1.2),
+  gene.annot = NULL,
   forceResults = FALSE
 )
 }

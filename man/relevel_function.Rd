@@ -10,6 +10,7 @@ relevel_function(
   reference,
   given_dir,
   dfAnnotation,
+  list_of_cols,
   int_threads = 2,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),

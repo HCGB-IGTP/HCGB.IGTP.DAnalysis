@@ -682,7 +682,7 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
 #' @export
 relevel_function <- function(dds_object, category, reference, 
-                             given_dir, dfAnnotation, int_threads=2, 
+                             given_dir, dfAnnotation, list_of_cols, int_threads=2, 
                              sign_value.given = 0.05, LFC.given = log2(1.2),
                              comp_ID.given="comp1", forceResults=FALSE, localFit=FALSE){
   ## relevel
@@ -714,7 +714,7 @@ relevel_function <- function(dds_object, category, reference,
         coef_n = coef_name, comp_ID=paste0("relevel_", comp_ID.given), 
         comp_name = listNames[1], 
         numerator = listNames[2], denominator = listNames[3],
-        OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, 
+        OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
         sign_value.given = sign_value.given, LFC.given = LFC.given,
         threads = as.numeric(int_threads), forceResults = forceResults)
       
@@ -783,7 +783,10 @@ get_all_data_DESeq2 <- function(dds_obj, coef_n, type="DESeq2") {
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @export
 check_reduced_LRT <- function(dds_obj.given, formula_given, 
-                              comp.folder.given, compID.given, dfAnnotation.given, int_threads=2, forceResults=FALSE) {
+                              comp.folder.given, compID.given, 
+                              dfAnnotation.given,  list_of_cols, int_threads=2, 
+                              sign_value.given=0.05, LFC.given = log2(1.2),
+                              gene.annot=NULL, forceResults=FALSE) {
   
   ## LRT: Check reduction
   DEseq.red <- DESeq2::DESeq(object = dds_obj.given, test="LRT", 
@@ -800,8 +803,12 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
   DEseq.red.res <- get_Results_DDS(dds_object = DEseq.red, 
                                    OUTPUT_Data_dir_given = comp.folder.given, 
                                    comp_ID = compID.given,
-                                   dfAnnotation = dfAnnotation.given, 
-                                   int_threads = int_threads, forceResults=forceResults)
+                                   dfAnnotation = dfAnnotation.given, list_of_cols = list_of_cols,
+                                   int_threads = int_threads, 
+                                   forceResults=forceResults,   
+                                   sign_value.given = sign_value.given, 
+                                   LFC.given = LFC.given, 
+                                   gene.annot=gene.annot)
   
   return(DEseq.red.res)
 }
@@ -817,8 +824,8 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
 #' @param comp.folder.given Absolute path to store results
 #' @param int_threads Number of threads to use
 #' @export
-check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.formula.given, 
-                               compID.given, comp.folder.given, int_threads=2) {
+check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.formula.given, list_of_cols,
+                               compID.given, comp.folder.given, int_threads=2, gene.annot.df=NULL) {
   
   resulst_list <- list()
   
@@ -832,8 +839,11 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   print(paste0("~", red.formula.given))
   
   naive_res <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
-                              count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
+                              count_table = countsGiven, 
+                              sample_sheet_given = sampleSheet.given, 
                               int_threads = int_threads,  
+                              gene.annot=gene.annot.df,
+                              list_of_cols=list_of_cols,
                               formula_given = as.formula(paste0("~", red.formula.given)), 
                               early_return = FALSE, comp_ID = paste0(compID.given, ".naive"))
   
@@ -863,6 +873,8 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                     int_threads = int_threads, 
                                     formula_given = as.formula(paste0("~", term, "+", red.formula.given)), 
                                     early_return = FALSE, 
+                                    gene.annot=gene.annot.df,
+                                    list_of_cols=list_of_cols,
                                     comp_ID = comp_ID.here)
     
     resulst_list[[term]] = this.term.res
@@ -880,6 +892,8 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
     resulst_list[[paste0(term, ".red")]] = check_reduced_LRT(dds_obj.given = this.term.res$dds_obj, 
                                                              formula_given = as.formula(paste0("~", red.formula.given)),
                                                              comp.folder.given = comp.folder.given, 
+                                                             gene.annot=gene.annot.df, 
+                                                             list_of_cols=list_of_cols,
                                                              compID.given = paste0(comp_ID.here, ".red"), 
                                                              dfAnnotation.given = sampleSheet.given)
     
@@ -899,7 +913,8 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   
   resulst_list[["complex"]] = analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
                                              count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
-                                             int_threads = int_threads, 
+                                             int_threads = int_threads, gene.annot=gene.annot.df,
+                                             list_of_cols=list_of_cols,
                                              formula_given = as.formula(paste0("~", 
                                                                                paste(list.terms, "+ ", 
                                                                                      collapse = ""), red.formula.given)), 
