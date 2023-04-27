@@ -85,7 +85,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     if (file.exists(file.path(OUTPUT_Data_sample, "data2return.RData"))) {
       print("Data already available in:")
       print(OUTPUT_Data_sample)
-      return()
+      return(file.path(OUTPUT_Data_sample, "data2return.RData"))
     }
   }
   #--------------------------
@@ -847,7 +847,10 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                               formula_given = as.formula(paste0("~", red.formula.given)), 
                               early_return = FALSE, comp_ID = paste0(compID.given, ".naive"))
   
-  resulst_list[[red.formula.given]] = naive_res
+  ## Save only the path
+  save(naive_res, file = file.path(comp.folder.given, "naive.RData"))
+  naive_res <- NULL
+  resulst_list[['naive']] = file.path(comp.folder.given, "naive.RData")
   
   print("##################")
   ##--------------------------
@@ -856,18 +859,22 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   ## add terms: addition
   ##--------------------------
   print("++++++++++++++++++++++++++++")
-  print("Test addition")
+  print("Test addition and interaction")
   print("++++++++++++++++++++++++++++")
   
   for (term in list.terms) {
+    
+    print("##################")
     print("Testing the effect of:")
     print(term)
+    
+    comp_ID.here <- paste0(compID.given, "_", term)
+    
+    print("Testing the effect of addittion:")
     print("Formula: ")
     print(paste0("~", term, "+", red.formula.given))
     
-    comp_ID.here <- paste0(compID.given, ".", term)
-    
-    this.term.res <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+    this.term.res.add <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
                                     count_table = countsGiven, 
                                     sample_sheet_given = sampleSheet.given, 
                                     int_threads = int_threads, 
@@ -875,28 +882,50 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                     early_return = FALSE, 
                                     gene.annot=gene.annot.df,
                                     list_of_cols=list_of_cols,
-                                    comp_ID = comp_ID.here)
-    
-    resulst_list[[term]] = this.term.res
+                                    comp_ID = paste0(comp_ID.here, ".add"))
+    ## Save only the path
+    save(this.term.res.add, file = file.path(comp.folder.given, paste0(term, ".add.RData")))
+    resulst_list[[paste0(term, ".add")]] = file.path(comp.folder.given, paste0(term, ".add.RData"))
     
     print("##################")
+    print("Testing the effect of interaction:")
+    print("Formula: ")
+    print(paste0("~", term, ":", red.formula.given))
     
+    this.term.res.int <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+                                    count_table = countsGiven, 
+                                    sample_sheet_given = sampleSheet.given, 
+                                    int_threads = int_threads, 
+                                    formula_given = as.formula(paste0("~", term, ":", red.formula.given)), 
+                                    early_return = FALSE, 
+                                    gene.annot=gene.annot.df,
+                                    list_of_cols=list_of_cols,
+                                    comp_ID = paste0(comp_ID.here, ".int"))
+    ## Save only the path
+    save(this.term.res.int, file = file.path(comp.folder.given, paste0(term, "int.RData")))
+    resulst_list[[paste0(term, ".int")]] = file.path(comp.folder.given, paste0(term, "int.RData"))
+
+    print("##################")
     print("Testing the effect of reducing:")
     print(term)
     print("Formula: ")
-    print(paste0("~", term, "+", red.formula.given, " vs. ~", red.formula.given))
-    
+    print(paste0("~", term, ":", red.formula.given, " vs. ~", red.formula.given))
     
     ## Check reduction
+    red.res = check_reduced_LRT(dds_obj.given = this.term.res.int$dds_obj, 
+                                formula_given = as.formula(paste0("~", red.formula.given)),
+                                comp.folder.given = comp.folder.given, 
+                                gene.annot=gene.annot.df, 
+                                list_of_cols=list_of_cols,
+                                compID.given = paste0(comp_ID.here, ".red"), 
+                                dfAnnotation.given = sampleSheet.given)
+    ## save the path
+    save(red.res, file = file.path(comp.folder.given, paste0(term, ".red.RData")))
+    resulst_list[[paste0(term, ".red")]] = file.path(comp.folder.given, paste0(term, ".red.RData"))
     
-    resulst_list[[paste0(term, ".red")]] = check_reduced_LRT(dds_obj.given = this.term.res$dds_obj, 
-                                                             formula_given = as.formula(paste0("~", red.formula.given)),
-                                                             comp.folder.given = comp.folder.given, 
-                                                             gene.annot=gene.annot.df, 
-                                                             list_of_cols=list_of_cols,
-                                                             compID.given = paste0(comp_ID.here, ".red"), 
-                                                             dfAnnotation.given = sampleSheet.given)
-    
+    red.res <- NULL
+    this.term.res.int <- NULL
+    this.term.res.add <- NULL
   }
   ##--------------------------
   
@@ -911,7 +940,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   print("Formula: ")
   print(paste0("~", paste(list.terms, "+ ", collapse = ""), red.formula.given))
   
-  resulst_list[["complex"]] = analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+  complex_res = analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
                                              count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
                                              int_threads = int_threads, gene.annot=gene.annot.df,
                                              list_of_cols=list_of_cols,
@@ -921,6 +950,10 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                              early_return = FALSE, 
                                              comp_ID = paste0(compID.given, ".complex"))
   
+  ## save the path
+  save(complex_res, file = file.path(comp.folder.given, "complex.RData"))
+  resulst_list[["complex"]] = file.path(comp.folder.given, "complex.RData")
+
   ##--------------------------
   
   print("##################")
@@ -1070,11 +1103,23 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
 #' @param OUTPUT_dir Absolute path to store results
 #' @param dfAnnotation_df Dataframe with useful metadata to include
 #' @param list_of_cols List of columns of interest to subset from metadata
+#' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @export
-exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_of_cols){
+exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_of_cols, forceResults=FALSE){
   
   library(reshape2)
   library(RColorBrewer)
+  
+  if (forceResults) {
+    
+  } else {
+    ## check if previously done
+    if (file.exists(file.path(OUTPUT_dir, "exploratory.RData"))) {
+      print("Data already available in:")
+      print(OUTPUT_dir)
+      return(file.path(OUTPUT_dir, "exploratory.RData"))
+    }
+  }
   
   ############################
   # Exploratory plots 
@@ -1154,6 +1199,8 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
     ),
     "cooks.data" = df.cooks
   )
+  
+  save(plots2return, file = file.path(OUTPUT_dir, "exploratory.RData"))
   
   return(plots2return)
   

@@ -4,7 +4,13 @@
 \alias{exploratory_plots}
 \title{Exploratory plots for DESEQ2 analysis}
 \usage{
-exploratory_plots(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_of_cols)
+exploratory_plots(
+  dds_object.exp,
+  OUTPUT_dir,
+  dfAnnotation_df,
+  list_of_cols,
+  forceResults = FALSE
+)
 }
 \arguments{
 \item{dds_object.exp}{DESeq2 object (DESeqDataSet)}
@@ -14,6 +20,8 @@ exploratory_plots(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_of_cols)
 \item{dfAnnotation_df}{Dataframe with useful metadata to include}
 
 \item{list_of_cols}{List of columns of interest to subset from metadata}
+
+\item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
