@@ -266,7 +266,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   #--------------------------
   print(length(rownames(sign.data)))
   
-  if (length(rownames(sign.data)) < 1) {
+  if (length(rownames(sign.data)) < 3) {
     
     data2save<- list(
       "alldata2" = alldata2,
