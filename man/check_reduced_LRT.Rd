@@ -15,7 +15,8 @@ check_reduced_LRT(
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
   gene.annot = NULL,
-  forceResults = FALSE
+  forceResults = FALSE,
+  shrinkage.given = "apeglm"
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ check_reduced_LRT(
 \item{dfAnnotation.given}{Dataframe with useful metadata to include}
 
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
+
+\item{shrinkage.given}{LFC shrinkage estimator provided. Available: apeglm, ashr or normal}
 }
 \description{
 Check reducing effect using LRT method.

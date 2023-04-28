@@ -13,7 +13,8 @@ check_terms_matrix(
   compID.given,
   comp.folder.given,
   int_threads = 2,
-  gene.annot.df = NULL
+  gene.annot.df = NULL,
+  shrinkage.given = "apeglm"
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ check_terms_matrix(
 \item{comp.folder.given}{Absolute path to store results}
 
 \item{int_threads}{Number of threads to use}
+
+\item{shrinkage.given}{LFC shrinkage estimator provided. Available: apeglm, ashr or normal}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them

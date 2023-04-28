@@ -45,7 +45,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
                                 OUTPUT_Data_dir, df_treatment_Ind, list_of_cols, threads=2, 
                                 sign_value.given = 0.05, LFC.given = log2(1.2), gene.annot.df=NULL,
-                                forceResults=FALSE) {
+                                forceResults=FALSE, shrinkage="apeglm") {
   
   #--------------------------
   # Packages
@@ -94,12 +94,16 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   ## Generate results according to comparison
   #--------------------------
   
+  print("+ Using shrinkage estimation provided:")
+  print(shrinkage)
+
   ## Compare pvalues distribution
-  res <- DESeq2::lfcShrink(dds_object, coef=coef_n, type="apeglm", parallel = TRUE)
+  res <- DESeq2::lfcShrink(dds_object, coef=coef_n, type = shrinkage, parallel = TRUE)
   
   ## filter low counts
   dds_object = HCGB.IGTP.DAnalysis::discard_lowCounts(dds_object = dds_object)
-  res_filtered <- DESeq2::lfcShrink(dds_object, coef=coef_n, type="apeglm", parallel = TRUE)
+  res_filtered <- DESeq2::lfcShrink(dds_object, coef=coef_n, type=shrinkage, parallel = TRUE)
+  
   #--------------------------
   
   #--------------------------
@@ -273,7 +277,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       "res_filtered" = res_filtered,
       "sign.df"=sign.data,
       "sign.genes"=sign.data$Gene,
-      "sign.count"=length(sign.data$Gene)
+      "sign.count"=length(sign.data$Gene),
+      "shrinkage.LFC"=shrinkage
     )
     
     ## dump in disk RData
@@ -286,7 +291,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       "res_filtered" = res_filtered,
       "sign.df"=sign.data,
       "sign.genes"=sign.data$Gene,
-      "sign.count"=length(sign.data$Gene)
+      "sign.count"=length(sign.data$Gene),
+      "shrinkage.LFC"=shrinkage
     )
     
   } else {
@@ -472,7 +478,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       "res_filtered"=res_filtered,
       "sign.df"=sign.data,
       "sign.genes"=sign.data$Gene,
-      "sign.count"=length(sign.data$Gene)
+      "sign.count"=length(sign.data$Gene),
+      "shrinkage.LFC"=shrinkage
     )
     
     ## dump in disk RData
@@ -485,7 +492,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       "res_filtered"=res_filtered,
       "sign.df"=sign.data,
       "sign.genes"=sign.data$Gene,
-      "sign.count"=length(sign.data$Gene)
+      "sign.count"=length(sign.data$Gene),
+      "shrinkage.LFC"=shrinkage
     )
     
   }
@@ -781,12 +789,13 @@ get_all_data_DESeq2 <- function(dds_obj, coef_n, type="DESeq2") {
 #' @param compID.given Tag name to include for each comparison
 #' @param dfAnnotation.given Dataframe with useful metadata to include
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
+#' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @export
 check_reduced_LRT <- function(dds_obj.given, formula_given, 
                               comp.folder.given, compID.given, 
                               dfAnnotation.given,  list_of_cols, int_threads=2, 
                               sign_value.given=0.05, LFC.given = log2(1.2),
-                              gene.annot=NULL, forceResults=FALSE) {
+                              gene.annot=NULL, forceResults=FALSE, shrinkage.given="apeglm") {
   
   ## LRT: Check reduction
   DEseq.red <- DESeq2::DESeq(object = dds_obj.given, test="LRT", 
@@ -808,7 +817,7 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
                                    forceResults=forceResults,   
                                    sign_value.given = sign_value.given, 
                                    LFC.given = LFC.given, 
-                                   gene.annot=gene.annot)
+                                   gene.annot=gene.annot, shrinkage.given=shrinkage.given)
   
   return(DEseq.red.res)
 }
@@ -823,9 +832,10 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
 #' @param compID.given Tag name to include for each comparison
 #' @param comp.folder.given Absolute path to store results
 #' @param int_threads Number of threads to use
+#' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @export
 check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.formula.given, list_of_cols,
-                               compID.given, comp.folder.given, int_threads=2, gene.annot.df=NULL) {
+                               compID.given, comp.folder.given, int_threads=2, gene.annot.df=NULL, shrinkage.given="apeglm") {
   
   resulst_list <- list()
   
@@ -845,7 +855,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                               gene.annot=gene.annot.df,
                               list_of_cols=list_of_cols,
                               formula_given = as.formula(paste0("~", red.formula.given)), 
-                              early_return = FALSE, comp_ID = paste0(compID.given, ".naive"))
+                              early_return = FALSE, comp_ID = paste0(compID.given, ".naive"), shrinkage.given=shrinkage.given)
   
   ## Save only the path
   save(naive_res, file = file.path(comp.folder.given, "naive.RData"))
@@ -882,7 +892,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                     early_return = FALSE, 
                                     gene.annot=gene.annot.df,
                                     list_of_cols=list_of_cols,
-                                    comp_ID = paste0(comp_ID.here, ".add"))
+                                    comp_ID = paste0(comp_ID.here, ".add"), shrinkage.given=shrinkage.given)
     ## Save only the path
     save(this.term.res.add, file = file.path(comp.folder.given, paste0(term, ".add.RData")))
     resulst_list[[paste0(term, ".add")]] = file.path(comp.folder.given, paste0(term, ".add.RData"))
@@ -900,10 +910,10 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                     early_return = FALSE, 
                                     gene.annot=gene.annot.df,
                                     list_of_cols=list_of_cols,
-                                    comp_ID = paste0(comp_ID.here, ".int"))
+                                    comp_ID = paste0(comp_ID.here, ".int"), shrinkage.given=shrinkage.given)
     ## Save only the path
-    save(this.term.res.int, file = file.path(comp.folder.given, paste0(term, "int.RData")))
-    resulst_list[[paste0(term, ".int")]] = file.path(comp.folder.given, paste0(term, "int.RData"))
+    save(this.term.res.int, file = file.path(comp.folder.given, paste0(term, ".int.RData")))
+    resulst_list[[paste0(term, ".int")]] = file.path(comp.folder.given, paste0(term, ".int.RData"))
 
     print("##################")
     print("Testing the effect of reducing:")
@@ -918,7 +928,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                 gene.annot=gene.annot.df, 
                                 list_of_cols=list_of_cols,
                                 compID.given = paste0(comp_ID.here, ".red"), 
-                                dfAnnotation.given = sampleSheet.given)
+                                dfAnnotation.given = sampleSheet.given, shrinkage.given=shrinkage.given)
     ## save the path
     save(red.res, file = file.path(comp.folder.given, paste0(term, ".red.RData")))
     resulst_list[[paste0(term, ".red")]] = file.path(comp.folder.given, paste0(term, ".red.RData"))
@@ -948,7 +958,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
                                                                                paste(list.terms, "+ ", 
                                                                                      collapse = ""), red.formula.given)), 
                                              early_return = FALSE, 
-                                             comp_ID = paste0(compID.given, ".complex"))
+                                             comp_ID = paste0(compID.given, ".complex"), shrinkage.given=shrinkage.given)
   
   ## save the path
   save(complex_res, file = file.path(comp.folder.given, "complex.RData"))
@@ -981,12 +991,13 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param gene.annot Dataframe containing gene annotation (Default: NULL)
+#' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
                            list_of_cols, formula_given, int_threads=2,
                            sign_value.given = 0.05, LFC.given = log2(1.2),
                            coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, 
-                           localFit=FALSE, forceResults=FALSE, gene.annot=NULL) {
+                           localFit=FALSE, forceResults=FALSE, gene.annot=NULL, shrinkage.given="apeglm") {
   
   dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
   
@@ -1028,7 +1039,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   ## exploratory dds_object
   #############
   print("Exploratory plots")
-  exploratory_plots_dir <- file.path(OUTPUT_Data_dir_given, paste0(comp_ID, "exploratory_plots"))
+  exploratory_plots_dir <- file.path(OUTPUT_Data_dir_given, paste0(comp_ID, "_exploratory_plots"))
   dir.create(exploratory_plots_dir, showWarnings = FALSE)
   
   exploratory_plots_returned <- exploratory_plots(dds_object.exp = dds_object, 
@@ -1076,7 +1087,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
                                  OUTPUT_Data_dir_given = OUTPUT_Data_dir_given, 
                                  dfAnnotation = sample_sheet_given, list_of_cols, comp_ID = comp_ID, 
                                  sign_value.given = sign_value.given, LFC.given = LFC.given, gene.annot=gene.annot,
-                                 int_threads = int_threads, coef_n = coef_n, forceResults=forceResults)
+                                 int_threads = int_threads, coef_n = coef_n, forceResults=forceResults, shrinkage.given=shrinkage.given)
   #############
   
   #############
@@ -1220,10 +1231,11 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param gene.annot Dataframe containing gene annotation (Default: NULL)
+#' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @export
 get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, list_of_cols, comp_ID,
                             sign_value.given = 0.05, LFC.given = log2(1.2),
-                            int_threads=2, coef_n=NA, forceResults=FALSE, gene.annot=NULL) {
+                            int_threads=2, coef_n=NA, forceResults=FALSE, gene.annot=NULL, shrinkage.given='apeglm') {
   ###########
   # Get results
   #############
@@ -1239,7 +1251,7 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
       OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
       list_of_cols = list_of_cols,
       sign_value.given = sign_value.given, LFC.given = LFC.given,
-      threads = as.numeric(int_threads), forceResults=forceResults, gene.annot.df = gene.annot)
+      threads = as.numeric(int_threads), forceResults=forceResults, gene.annot.df = gene.annot, shrinkage=shrinkage.given)
     
     ## save to return
     coef_name = as.character(resultsNames(dds_object)[coef_n])
@@ -1259,7 +1271,7 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
           comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
           OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
           sign_value.given = sign_value.given, LFC.given = LFC.given,
-          threads = as.numeric(int_threads), forceResults=forceResults, gene.annot=gene.annot)
+          threads = as.numeric(int_threads), forceResults=forceResults, gene.annot=gene.annot, shrinkage=shrinkage.given)
         
         ## save results
         results_list[[coef_name]] = res_dds

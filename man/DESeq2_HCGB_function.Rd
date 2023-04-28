@@ -18,7 +18,8 @@ DESeq2_HCGB_function(
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
   gene.annot.df = NULL,
-  forceResults = FALSE
+  forceResults = FALSE,
+  shrinkage = "apeglm"
 )
 }
 \arguments{

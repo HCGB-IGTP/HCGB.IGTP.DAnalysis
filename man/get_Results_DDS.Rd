@@ -15,7 +15,8 @@ get_Results_DDS(
   int_threads = 2,
   coef_n = NA,
   forceResults = FALSE,
-  gene.annot = NULL
+  gene.annot = NULL,
+  shrinkage.given = "apeglm"
 )
 }
 \arguments{
@@ -38,6 +39,8 @@ get_Results_DDS(
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 
 \item{gene.annot}{Dataframe containing gene annotation (Default: NULL)}
+
+\item{shrinkage.given}{LFC shrinkage estimator provided. Available: apeglm, ashr or normal}
 }
 \description{
 When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
