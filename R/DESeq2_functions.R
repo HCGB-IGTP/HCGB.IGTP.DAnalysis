@@ -835,7 +835,8 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
 #' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @export
 check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.formula.given, list_of_cols,
-                               compID.given, comp.folder.given, int_threads=2, gene.annot.df=NULL, shrinkage.given="apeglm") {
+                               compID.given, comp.folder.given, 
+                               int_threads=2, gene.annot.df=NULL, shrinkage.given="apeglm") {
   
   resulst_list <- list()
   
@@ -848,14 +849,14 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   print("Formula: ")
   print(paste0("~", red.formula.given))
   
-  naive_res <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
-                              count_table = countsGiven, 
-                              sample_sheet_given = sampleSheet.given, 
-                              int_threads = int_threads,  
-                              gene.annot=gene.annot.df,
-                              list_of_cols=list_of_cols,
-                              formula_given = as.formula(paste0("~", red.formula.given)), 
-                              early_return = FALSE, comp_ID = paste0(compID.given, ".naive"), shrinkage.given=shrinkage.given)
+  naive_res <- HCGB.IGTP.DAnalysis::analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+                                                   count_table = countsGiven, 
+                                                   sample_sheet_given = sampleSheet.given, 
+                                                   int_threads = int_threads,  
+                                                   gene.annot=gene.annot.df,
+                                                   list_of_cols=list_of_cols,
+                                                   formula_given = as.formula(paste0("~", red.formula.given)), 
+                                                   early_return = FALSE, comp_ID = paste0(compID.given, ".naive"), shrinkage.given=shrinkage.given)
   
   ## Save only the path
   save(naive_res, file = file.path(comp.folder.given, "naive.RData"))
@@ -884,15 +885,15 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
     print("Formula: ")
     print(paste0("~", term, "+", red.formula.given))
     
-    this.term.res.add <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
-                                    count_table = countsGiven, 
-                                    sample_sheet_given = sampleSheet.given, 
-                                    int_threads = int_threads, 
-                                    formula_given = as.formula(paste0("~", term, "+", red.formula.given)), 
-                                    early_return = FALSE, 
-                                    gene.annot=gene.annot.df,
-                                    list_of_cols=list_of_cols,
-                                    comp_ID = paste0(comp_ID.here, ".add"), shrinkage.given=shrinkage.given)
+    this.term.res.add <- try(HCGB.IGTP.DAnalysis::analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+                                                                 count_table = countsGiven, 
+                                                                 sample_sheet_given = sampleSheet.given, 
+                                                                 int_threads = int_threads, 
+                                                                 formula_given = as.formula(paste0("~", term, "+", red.formula.given)), 
+                                                                 early_return = FALSE, 
+                                                                 gene.annot=gene.annot.df,
+                                                                 list_of_cols=list_of_cols,
+                                                                 comp_ID = paste0(comp_ID.here, ".add"), shrinkage.given=shrinkage.given))
     ## Save only the path
     save(this.term.res.add, file = file.path(comp.folder.given, paste0(term, ".add.RData")))
     resulst_list[[paste0(term, ".add")]] = file.path(comp.folder.given, paste0(term, ".add.RData"))
@@ -902,19 +903,19 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
     print("Formula: ")
     print(paste0("~", term, ":", red.formula.given))
     
-    this.term.res.int <- analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
-                                    count_table = countsGiven, 
-                                    sample_sheet_given = sampleSheet.given, 
-                                    int_threads = int_threads, 
-                                    formula_given = as.formula(paste0("~", term, ":", red.formula.given)), 
-                                    early_return = FALSE, 
-                                    gene.annot=gene.annot.df,
-                                    list_of_cols=list_of_cols,
-                                    comp_ID = paste0(comp_ID.here, ".int"), shrinkage.given=shrinkage.given)
+    this.term.res.int <- try(HCGB.IGTP.DAnalysis::analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
+                                                                 count_table = countsGiven, 
+                                                                 sample_sheet_given = sampleSheet.given, 
+                                                                 int_threads = int_threads, 
+                                                                 formula_given = as.formula(paste0("~", term, ":", red.formula.given)), 
+                                                                 early_return = FALSE, 
+                                                                 gene.annot=gene.annot.df,
+                                                                 list_of_cols=list_of_cols,
+                                                                 comp_ID = paste0(comp_ID.here, ".int"), shrinkage.given=shrinkage.given))
     ## Save only the path
     save(this.term.res.int, file = file.path(comp.folder.given, paste0(term, ".int.RData")))
     resulst_list[[paste0(term, ".int")]] = file.path(comp.folder.given, paste0(term, ".int.RData"))
-
+    
     print("##################")
     print("Testing the effect of reducing:")
     print(term)
@@ -922,13 +923,13 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
     print(paste0("~", term, ":", red.formula.given, " vs. ~", red.formula.given))
     
     ## Check reduction
-    red.res = check_reduced_LRT(dds_obj.given = this.term.res.int$dds_obj, 
-                                formula_given = as.formula(paste0("~", red.formula.given)),
-                                comp.folder.given = comp.folder.given, 
-                                gene.annot=gene.annot.df, 
-                                list_of_cols=list_of_cols,
-                                compID.given = paste0(comp_ID.here, ".red"), 
-                                dfAnnotation.given = sampleSheet.given, shrinkage.given=shrinkage.given)
+    red.res = try(HCGB.IGTP.DAnalysis::check_reduced_LRT(dds_obj.given = this.term.res.int$dds_obj, 
+                                                         formula_given = as.formula(paste0("~", red.formula.given)),
+                                                         comp.folder.given = comp.folder.given, 
+                                                         gene.annot=gene.annot.df, 
+                                                         list_of_cols=list_of_cols,
+                                                         compID.given = paste0(comp_ID.here, ".red"), 
+                                                         dfAnnotation.given = sampleSheet.given, shrinkage.given=shrinkage.given))
     ## save the path
     save(red.res, file = file.path(comp.folder.given, paste0(term, ".red.RData")))
     resulst_list[[paste0(term, ".red")]] = file.path(comp.folder.given, paste0(term, ".red.RData"))
@@ -951,19 +952,19 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
   print(paste0("~", paste(list.terms, "+ ", collapse = ""), red.formula.given))
   
   complex_res = analysis_DESeq(OUTPUT_Data_dir_given = comp.folder.given,
-                                             count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
-                                             int_threads = int_threads, gene.annot=gene.annot.df,
-                                             list_of_cols=list_of_cols,
-                                             formula_given = as.formula(paste0("~", 
-                                                                               paste(list.terms, "+ ", 
-                                                                                     collapse = ""), red.formula.given)), 
-                                             early_return = FALSE, 
-                                             comp_ID = paste0(compID.given, ".complex"), shrinkage.given=shrinkage.given)
+                               count_table = countsGiven, sample_sheet_given = sampleSheet.given, 
+                               int_threads = int_threads, gene.annot=gene.annot.df,
+                               list_of_cols=list_of_cols,
+                               formula_given = as.formula(paste0("~", 
+                                                                 paste(list.terms, "+ ", 
+                                                                       collapse = ""), red.formula.given)), 
+                               early_return = FALSE, 
+                               comp_ID = paste0(compID.given, ".complex"), shrinkage.given=shrinkage.given)
   
   ## save the path
   save(complex_res, file = file.path(comp.folder.given, "complex.RData"))
   resulst_list[["complex"]] = file.path(comp.folder.given, "complex.RData")
-
+  
   ##--------------------------
   
   print("##################")

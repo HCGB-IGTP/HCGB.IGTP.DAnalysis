@@ -134,3 +134,27 @@ convertDate <- function(date_str) {
   ## Example: sapply(example_df$Date, convertDate)
 }
 
+#' Converts columns in factors
+#' 
+#' This functions loads a given dataframe and returns for the given set of columns, columns converted as factors, numeric, characters as specified.
+#' @param given.df Dataframe
+#' @param col_names.given List of columns to convert
+#' @param mode Type of conversion to do: factor, as.factor, as.numeric = as.numeric(as.character("") )
+#' @export
+df.factorizer <- function(given.df, col_names.given, mode="factor"){
+  
+  if (mode=="factor") {
+    # to do it for some names in a vector named 'col_names'
+    given.df[col_names.given] <- lapply(given.df[col_names.given] , factor)
+    
+  } else if (mode=="as.factor") {
+    # to do it for some names in a vector named 'col_names'
+    given.df[col_names.given] <- lapply(given.df[col_names.given] , as.factor)
+  }  else if (mode=="as.numeric") {
+    # to do it for some names in a vector named 'col_names'
+    given.df[col_names.given] <- lapply(given.df[col_names.given] , as.character)
+    given.df[col_names.given] <- lapply(given.df[col_names.given] , as.numeric)
+  }
+  return(given.df)
+}
+
