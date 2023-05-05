@@ -4,7 +4,14 @@
 \alias{plot_gene_values}
 \title{Plot values per genes}
 \usage{
-plot_gene_values(gene, tableCounts, targetsFile, condition, out_folder)
+plot_gene_values(
+  gene,
+  tableCounts,
+  targetsFile,
+  condition,
+  out_folder,
+  print2file = TRUE
+)
 }
 \arguments{
 \item{gene}{Gene ID}

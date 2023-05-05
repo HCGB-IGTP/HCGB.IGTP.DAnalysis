@@ -41,6 +41,7 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param gene.annot.df Dataframe containing gene annotation (Default: NULL)
 #' @export
+
 DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
                                 OUTPUT_Data_dir, df_treatment_Ind, list_of_cols, threads=2, 
@@ -96,7 +97,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   
   print("+ Using shrinkage estimation provided:")
   print(shrinkage)
-
+  
   ## Compare pvalues distribution
   res <- DESeq2::lfcShrink(dds_object, coef=coef_n, type = shrinkage, parallel = TRUE)
   
@@ -295,214 +296,249 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       "shrinkage.LFC"=shrinkage
     )
     
-  } else {
+    return(data2return)
+  } 
+  
+  #--------------------------
+  ## ma plot
+  #--------------------------
+  pdf(file.path(OUTPUT_Data_sample, "DiffExpression-maplot.jpeg"))
+  plotMA(res_filtered)
+  dev.off()
+  #--------------------------
+  
+  #--------------------------
+  ## volcano
+  #--------------------------
+  #jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-volcano-plot.jpeg")), 1500, 1000, pointsize=20)
+  volcano_main_title <- paste0("Volcano Plot: ", numerator, " vs ", denominator)
+  volcan_plot <- EnhancedVolcano::EnhancedVolcano(alldata, x="log2FoldChange", y="padj", lab="",
+                                                  pCutoff=sign_value.given, FCcutoff=LFC.given, pointSize=3, labSize=6) + 
+    ggplot2::scale_x_continuous() + ggplot2::labs(title = volcano_main_title)
+  
+  HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                                name_file = paste0(file_name, "_DiffExpression-volcano-plot"), plot_given = volcan_plot)
+  #--------------------------
+  
+  #--------------------------
+  ## Transform normal
+  #--------------------------
+  
+  ## rlog transformation
+  #rld <- DESeq2::rlogTransformation(dds_object)
+  
+  # variance stabilizing
+  vsd <- DESeq2::varianceStabilizingTransformation(dds_object, blind = FALSE)
+  
+  ## The figure below plots the standard deviation of the transformed data, 
+  ## across samples, against the mean, using the shifted logarithm transformation (ntd), 
+  ## the regularized log transformation (rld) and the variance stabilizing transformation (vst).
+  ## The shifted logarithm has elevated standard deviation in the lower count 
+  ## range, and the regularized log to a lesser extent, while for the variance 
+  ## stabilized data the standard deviation is roughly constant along the whole
+  ## dynamic range.
+  ## 
+  ## Note that the vertical axis in such plots is the square root of the variance 
+  ## over all samples, so including the variance due to the experimental conditions. 
+  ## While a flat curve of the square root of variance over the mean may seem like 
+  ## the goal of such transformations, this may be unreasonable in the case of 
+  ## datasets with many true differences due to the experimental conditions.
+  
+  ## ntd <- normTransform(dds_object)
+  ## pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-Transformation.pdf")))
+  ## Normal transformation  
+  ## meanSdPlot(assay(ntd))
+  ## RLE transformation
+  ## meanSdPlot(assay(rld))
+  ## VarianceStabilization transformation
+  ## meanSdPlot(assay(vsd))
+  ## dev.off()
+  #--------------------------
+  
+  #--------------------------
+  ### Pheatmap top50 DE genes
+  #--------------------------
+  
+  print("Plotting Top 50 significant DE genes with different normalization methods")
+  # Plotting Top 50 significant DE genes with different normalization methods:
+  select <- rownames(sign.data)[1:50]
+  select <- select[!is.na(select)] ## discard NA values
+  
+  if ( length(select) > 5 ) {
     
-    #--------------------------
-    ## ma plot
-    #--------------------------
-    pdf(file.path(OUTPUT_Data_sample, "DiffExpression-maplot.jpeg"))
-    plotMA(res_filtered)
-    dev.off()
-    #--------------------------
+    ## plot rld
+    #plot1 <- pheatmap(assay(rld)[select,],
+    #                  main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
+    #                  cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
+    #                  annotation_col = df_treatment_Ind[,list_of_cols],
+    #                  color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
+    #                  scale="row" ## centered and scale values per row
+    #)
+    #HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample,
+    #                              name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation_allSamples"),
+    #                              plot_given = plot1)
     
-    #--------------------------
-    ## volcano
-    #--------------------------
-    #jpeg(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-volcano-plot.jpeg")), 1500, 1000, pointsize=20)
-    volcano_main_title <- paste0("Volcano Plot: ", numerator, " vs ", denominator)
-    volcan_plot <- EnhancedVolcano::EnhancedVolcano(alldata, x="log2FoldChange", y="padj", lab="",
-                                                    pCutoff=sign_value.given, FCcutoff=LFC.given, pointSize=3, labSize=6) + 
-      ggplot2::scale_x_continuous() + ggplot2::labs(title = volcano_main_title)
+    ## plot vsd
+    plot2 <- pheatmap(assay(vsd)[select,],
+                      main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
+                      cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
+                      annotation_col = df_treatment_Ind[,list_of_cols],
+                      color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
+                      scale="row" ## centered and scale values per row7
+    )
     
-    HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                  name_file = paste0(file_name, "_DiffExpression-volcano-plot"), plot_given = volcan_plot)
-    #--------------------------
+    HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample,
+                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz_allSamples"),
+                                  plot_given = plot2)
     
-    #--------------------------
-    ## Transform normal
-    #--------------------------
     
-    ## rlog transformation
-    #rld <- DESeq2::rlogTransformation(dds_object)
-    
-    # variance stabilizing
-    vsd <- DESeq2::varianceStabilizingTransformation(dds_object, blind = FALSE)
-    
-    ## The figure below plots the standard deviation of the transformed data, 
-    ## across samples, against the mean, using the shifted logarithm transformation (ntd), 
-    ## the regularized log transformation (rld) and the variance stabilizing transformation (vst).
-    ## The shifted logarithm has elevated standard deviation in the lower count 
-    ## range, and the regularized log to a lesser extent, while for the variance 
-    ## stabilized data the standard deviation is roughly constant along the whole
-    ## dynamic range.
-    ## 
-    ## Note that the vertical axis in such plots is the square root of the variance 
-    ## over all samples, so including the variance due to the experimental conditions. 
-    ## While a flat curve of the square root of variance over the mean may seem like 
-    ## the goal of such transformations, this may be unreasonable in the case of 
-    ## datasets with many true differences due to the experimental conditions.
-    
-    ## ntd <- normTransform(dds_object)
-    ## pdf(file.path(OUTPUT_Data_sample, paste0(file_name, "_DiffExpression-Transformation.pdf")))
-    ## Normal transformation  
-    ## meanSdPlot(assay(ntd))
-    ## RLE transformation
-    ## meanSdPlot(assay(rld))
-    ## VarianceStabilization transformation
-    ## meanSdPlot(assay(vsd))
-    ## dev.off()
-    #--------------------------
-    
-    #--------------------------
-    ### Pheatmap top50 DE genes
-    #--------------------------
-    
-    print("Plotting Top 50 significant DE genes with different normalization methods")
-    # Plotting Top 50 significant DE genes with different normalization methods:
-    select <- rownames(sign.data)[1:50]
-    select <- select[!is.na(select)] ## discard NA values
-    
-    if ( length(select) > 5 ) {
+    if (!is.null(listOfSampls)) {
       
-      ## plot rld
-      #plot1 <- pheatmap(assay(rld)[select,],
-      #                  main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
-      #                  cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-      #                  annotation_col = df_treatment_Ind[,list_of_cols],
-      #                  color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
-      #                  scale="row" ## centered and scale values per row
-      #)
-      #HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample,
-      #                              name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation_allSamples"),
-      #                              plot_given = plot1)
+      ## Only samples included in comparison
+      dataSubset <- try(assay(vsd)[select,listOfSampls], silent = TRUE)
       
-      ## plot vsd
-      plot2 <- pheatmap(assay(vsd)[select,],
-                        main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
-                        cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-                        annotation_col = df_treatment_Ind[,list_of_cols],
-                        color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
-                        scale="row" ## centered and scale values per row7
-      )
-      
-      HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample,
-                                    name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz_allSamples"),
-                                    plot_given = plot2)
-      
-      
-      if (!is.null(listOfSampls)) {
+      if (exists("dataSubset")) {
         
-        ## Only samples included in comparison
-        dataSubset <- try(assay(vsd)[select,listOfSampls], silent = TRUE)
+        print("select:")
+        print(select)
+        print(head(dataSubset))
         
-        if (exists("dataSubset")) {
-          
-          print("select:")
-          print(select)
-          print(head(dataSubset))
-          
-          ## plot rld
-          #plot3 <- pheatmap(dataSubset,
-          #                  main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
-          #                  cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-          #                  annotation_col = df_treatment_Ind[,list_of_cols],
-          #                  color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
-          #                  scale="row" ## centered and scale values per row
-          #)
-          #save_pdf(folder_path = OUTPUT_Data_sample,
-          #         name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"),
-          #         plot_given = plot3)
-          
-          ## plot vsd
-          plot4 <- pheatmap(dataSubset,
-                            main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
-                            cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-                            annotation_col = df_treatment_Ind[,list_of_cols],
-                            color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
-                            scale="row" ## centered and scale values per row7
-          )
-          save_pdf(folder_path = OUTPUT_Data_sample,
-                   name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"),
-                   plot_given = plot4)
-        }
+        ## plot rld
+        #plot3 <- pheatmap(dataSubset,
+        #                  main=paste0("Log Transformation Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
+        #                  cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
+        #                  annotation_col = df_treatment_Ind[,list_of_cols],
+        #                  color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
+        #                  scale="row" ## centered and scale values per row
+        #)
+        #save_pdf(folder_path = OUTPUT_Data_sample,
+        #         name_file = paste0(file_name, "_top50_DEgenes_Heatmap-LogTransformation"),
+        #         plot_given = plot3)
         
+        ## plot vsd
+        plot4 <- pheatmap(dataSubset,
+                          main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
+                          cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
+                          annotation_col = df_treatment_Ind[,list_of_cols],
+                          color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
+                          scale="row" ## centered and scale values per row7
+        )
+        save_pdf(folder_path = OUTPUT_Data_sample,
+                 name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"),
+                 plot_given = plot4)
       }
       
     }
-    #--------------------------
-    
-    #--------------------------
-    ## Add PCA for all significant results
-    #--------------------------
-    ## create PCA
-    ## Add PCA for all significant results
-    norm.counts <- as.data.frame(counts(dds_object, normalized=TRUE))
-    data2pca <- t(norm.counts[sign.data$Gene,])
-    pca_res <- stats::prcomp(as.matrix(data2pca))
-    
-    pdf(file.path(OUTPUT_Data_sample,"PCA_multiple.pdf"))
-    for (i in colnames(df_treatment_Ind[,list_of_cols])) {
-      p<-autoplot(pca_res, 
-                  data=df_treatment_Ind, 
-                  colour=i) + 
-        theme_classic() + 
-        ggtitle(paste0("Variable: ", i )) 
-      print(p)
-    }
-    
-    p<-autoplot(pca_res,
-                data=df_treatment_Ind, 
-                colour=i) + 
-      geom_text(label=rownames(df_treatment_Ind)) + 
-      theme_classic() + ggtitle(paste0("Variable: ", i )) 
-    print(p)
-    
-    dev.off()
-    #--------------------------
-    
-    ######################################################################
-    print ("Finish here for: ")
-    print(file_name)
-    ######################################################################
-    
-    data2save <- list(
-      "alldata2" = alldata2,
-      "Samplslist" = Samplslist,
-      "alldata" = alldata,
-      "data2pca" = data2pca,
-      #"rld" = rld, ## It takes too much time
-      "vsd" = vsd,
-      "volcan_plot" = volcan_plot,
-      #"dds_object" = dds_object,
-      #"res"=res,
-      "res_filtered"=res_filtered,
-      "sign.df"=sign.data,
-      "sign.genes"=sign.data$Gene,
-      "sign.count"=length(sign.data$Gene),
-      "shrinkage.LFC"=shrinkage
-    )
-    
-    ## dump in disk RData
-    save(data2save, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
-    
-    data2return <- list(
-      "alldata2" = alldata2,
-      "Samplslist" = Samplslist,
-      "alldata" = alldata,
-      "res_filtered"=res_filtered,
-      "sign.df"=sign.data,
-      "sign.genes"=sign.data$Gene,
-      "sign.count"=length(sign.data$Gene),
-      "shrinkage.LFC"=shrinkage
-    )
     
   }
+  #--------------------------
   
+  #--------------------------
+  ## Add PCA for all significant results
+  #--------------------------
+  ## create PCA
+  ## Add PCA for all significant results
+  norm.counts <- as.data.frame(counts(dds_object, normalized=TRUE))
+  data2pca <- t(norm.counts[sign.data$Gene,])
+  pca_res <- stats::prcomp(as.matrix(data2pca))
+  
+  pdf(file.path(OUTPUT_Data_sample,"PCA_multiple.pdf"))
+  for (i in colnames(df_treatment_Ind[,list_of_cols])) {
+    p<-autoplot(pca_res, 
+                data=df_treatment_Ind, 
+                colour=i) + 
+      theme_classic() + 
+      ggtitle(paste0("Variable: ", i )) 
+    print(p)
+  }
+  
+  p<-autoplot(pca_res,
+              data=df_treatment_Ind, 
+              colour=i) + 
+    geom_text(label=rownames(df_treatment_Ind)) + 
+    theme_classic() + ggtitle(paste0("Variable: ", i )) 
+  print(p)
+  
+  dev.off()
+  #--------------------------
+  
+  #--------------------------
+  ## Add boxplot for each DE gene
+  #--------------------------
+  boxplot_DE <- file.path(OUTPUT_Data_sample, "boxplot_DE")
+  dir.create(boxplot_DE)
+  
+  df_treatment_Ind
+  
+  DE_plots.df <- data.frame(row.names = rownames(df_treatment_Ind), 
+                            df_treatment_Ind[,list_of_cols],
+                            t(sign.data[,rownames(df_treatment_Ind)]))
+  print(DE_plots.df)
+  
+  for (g in rownames(sign.data)) {
+    pdf(file.path(boxplot_DE, paste0(g, ".pdf")), paper = "A4r", width = 35, height = 12)
+    for (i in colnames(df_treatment_Ind[,list_of_cols])) {
+      g <- gsub("-", "\\.", g)
+      
+      print(g)
+      
+      if (is.numeric(df_treatment_Ind[,i])) {
+        p2 <- ggscatter_plotRegression(data_all_given = DE_plots.df, x.given = g, y.given = i, title_string = i) 
+      } else {
+        p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g)   
+      }
+      
+      print(p2)
+    }
+    dev.off()
+    
+  }
+  #--------------------------
+  
+  ######################################################################
+  print ("Finish here for: ")
+  print(file_name)
+  ######################################################################
+  
+  ######################################################################
+  ## Save
+  ######################################################################
+  data2save <- list(
+    "alldata2" = alldata2,
+    "Samplslist" = Samplslist,
+    "alldata" = alldata,
+    "data2pca" = data2pca,
+    #"rld" = rld, ## It takes too much time
+    "vsd" = vsd,
+    "volcan_plot" = volcan_plot,
+    #"dds_object" = dds_object,
+    #"res"=res,
+    "res_filtered"=res_filtered,
+    "sign.df"=sign.data,
+    "sign.genes"=sign.data$Gene,
+    "sign.count"=length(sign.data$Gene),
+    "shrinkage.LFC"=shrinkage,
+    "DE_plots.df" = DE_plots.df
+  )
+  
+  ## dump in disk RData
+  save(data2save, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
+  
+  data2return <- list(
+    "alldata2" = alldata2,
+    "Samplslist" = Samplslist,
+    "alldata" = alldata,
+    "res_filtered"=res_filtered,
+    "sign.df"=sign.data,
+    "sign.genes"=sign.data$Gene,
+    "sign.count"=length(sign.data$Gene),
+    "shrinkage.LFC"=shrinkage,
+    "DE_plots.df"=DE_plots.df
+  )
+  ######################################################################
   return(data2return)  
   
 }
-
-
 
 
 #' Plot batch effect
@@ -590,7 +626,7 @@ adjust_samples <- function(counts, target){
 #' @param condition List of phenotypic condition to retrieve in targestFile
 #' @param out_folder Out folder to create plot
 #' @export
-plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_folder) {
+plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_folder, print2file=TRUE) {
   library(ggplot2)
   library(ggpubr)
   library(data.table)
@@ -623,8 +659,10 @@ plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_fold
   p <- ggplot(test, aes(x = !! x.var, y = Count, fill= !! y.var)) + 
     geom_boxplot() + geom_point(position=position_jitterdodge(),alpha=0.3)
   
-  ## save plot
-  save_pdf(folder_path = out_folder, name_file = paste0('boxplot_gene-', gene), plot_given = p)
+  if (print2file) {
+    ## save plot
+    save_pdf(folder_path = out_folder, name_file = paste0('boxplot_gene-', gene), plot_given = p)
+  }
   return(p)
 }
 
@@ -1321,3 +1359,5 @@ check_rank_design <- function(formula2test, data.df) {
   print("which(col.res)")
   print(which(col.res))
 }
+
+
