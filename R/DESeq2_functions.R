@@ -148,8 +148,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   write.table(sign.data, 
               file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_table_SignificantDE.txt")), 
               sep="\t", quote=T, row.names = F)
-  
-  
   #--------------------------
   
   #--------------------------
@@ -298,6 +296,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     
     return(data2return)
   } 
+  #--------------------------  
   
   #--------------------------
   ## ma plot
@@ -476,14 +475,26 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   print(DE_plots.df)
   
   ## print only top50
-  for (g in head(rownames(sign.data), n=50)) {
-    g <- gsub("-", "\\.", g)
+  for (gene_given in head(rownames(sign.data), n=50)) {
+    
+    ## 
+    print(gene_given)
+    g <- gsub("-", "\\.", gene_given)
     g <- gsub("&", "\\.", g)
     g <- gsub(":", "\\.", g)
     g <- gsub("\\+", "\\.", g)
-    print(g)
     
-    pdf(file.path(boxplot_DE, paste0(g, ".pdf")), paper = "A4r", width = 35, height = 12)
+    ##
+    print(g)
+    if (!is.null(gene.annot.df)) {
+      gene_annot.df <- gene.annot.df.clean[gene_given,]
+      gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
+      print(gene_name)
+    } else {
+      gene_name = g
+    }
+      
+    pdf(file.path(boxplot_DE, paste0(gene_name, ".pdf")), paper = "A4r", width = 35, height = 12)
     for (i in colnames(df_treatment_Ind[,list_of_cols])) {
       g <- gsub("-", "\\.", g)
       
