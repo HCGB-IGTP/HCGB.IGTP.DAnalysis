@@ -475,7 +475,14 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                             t(sign.data[,rownames(df_treatment_Ind)]))
   print(DE_plots.df)
   
-  for (g in rownames(sign.data)) {
+  ## print only top50
+  for (g in head(rownames(sign.data), n=50)) {
+    g <- gsub("-", "\\.", g)
+    g <- gsub("&", "\\.", g)
+    g <- gsub(":", "\\.", g)
+    g <- gsub("\\+", "\\.", g)
+    print(g)
+    
     pdf(file.path(boxplot_DE, paste0(g, ".pdf")), paper = "A4r", width = 35, height = 12)
     for (i in colnames(df_treatment_Ind[,list_of_cols])) {
       g <- gsub("-", "\\.", g)
