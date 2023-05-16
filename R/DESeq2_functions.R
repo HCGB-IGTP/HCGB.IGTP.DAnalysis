@@ -1303,13 +1303,13 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
     listNames <- get_comparison_resultsNames(resultsNames(dds_object)[coef_n])
     print(listNames)
     print(paste0(" + Analysis for coefficient given: ", as.character(coef_n)))
-    res_dds = DESeq2_HCGB_function(
+    res_dds = try(DESeq2_HCGB_function(
       dds_object = dds_object, coef_n = coef_n, comp_name = listNames[1], comp_ID = comp_ID,
       numerator = listNames[2], denominator = listNames[3],
       OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
       list_of_cols = list_of_cols,
       sign_value.given = sign_value.given, LFC.given = LFC.given,
-      threads = as.numeric(int_threads), forceResults=forceResults, gene.annot.df = gene.annot, shrinkage=shrinkage.given)
+      threads = as.numeric(int_threads), forceResults=forceResults, gene.annot.df = gene.annot, shrinkage=shrinkage.given))
     
     ## save to return
     coef_name = as.character(resultsNames(dds_object)[coef_n])
@@ -1324,12 +1324,12 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
         
         print(listNames)
         
-        res_dds = DESeq2_HCGB_function(
+        res_dds = try(DESeq2_HCGB_function(
           dds_object = dds_object, coef_n = coef_name, comp_ID = comp_ID,
           comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
           OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
           sign_value.given = sign_value.given, LFC.given = LFC.given,
-          threads = as.numeric(int_threads), forceResults=forceResults, gene.annot=gene.annot, shrinkage=shrinkage.given)
+          threads = as.numeric(int_threads), forceResults=forceResults, gene.annot=gene.annot, shrinkage=shrinkage.given))
         
         ## save results
         results_list[[coef_name]] = res_dds
