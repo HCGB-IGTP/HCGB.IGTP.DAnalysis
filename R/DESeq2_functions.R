@@ -746,8 +746,8 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
 #' @export
 relevel_function <- function(dds_object, category, reference, 
-                             given_dir, dfAnnotation, list_of_cols, int_threads=2, 
-                             sign_value.given = 0.05, LFC.given = log2(1.2),
+                             given_dir, dfAnnotation, list_of_cols, gene.annot.df.given,
+                             int_threads=2, sign_value.given = 0.05, LFC.given = log2(1.2), 
                              comp_ID.given="comp1", forceResults=FALSE, localFit=FALSE){
   ## relevel
   dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
@@ -780,7 +780,8 @@ relevel_function <- function(dds_object, category, reference,
         numerator = listNames[2], denominator = listNames[3],
         OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
         sign_value.given = sign_value.given, LFC.given = LFC.given,
-        threads = as.numeric(int_threads), forceResults = forceResults)
+        threads = as.numeric(int_threads), gene.annot.df = gene.annot.df.given,
+        forceResults = forceResults)
       
       ## save to return
       #print (head(res_dds))

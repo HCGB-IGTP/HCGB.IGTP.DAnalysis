@@ -11,6 +11,7 @@ relevel_function(
   given_dir,
   dfAnnotation,
   list_of_cols,
+  gene.annot.df.given,
   int_threads = 2,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),

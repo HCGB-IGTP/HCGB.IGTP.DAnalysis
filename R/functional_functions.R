@@ -265,6 +265,9 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
   
   library(openxlsx)
   
+  dir.create(folder_out, showWarnings = FALSE)
+  
+  
   if (create.signed.logPval) {
     table_annot['signed.logPval'] <- sign(table_annot$log2FoldChange) * -log(table_annot$pvalue)  
   }
@@ -328,6 +331,7 @@ FGSEA_GSEA_loop <- function(table_annot, folder_out, name_given, nproc_given,
     
   }
   
+  save(fgsea2return, file=file.path(folder_out, "gsea.RData"))
   return(fgsea2return)
   
 }
