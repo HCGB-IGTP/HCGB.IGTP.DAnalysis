@@ -17,7 +17,8 @@ relevel_function(
   LFC.given = log2(1.2),
   comp_ID.given = "comp1",
   forceResults = FALSE,
-  localFit = FALSE
+  localFit = FALSE,
+  shrinkage.given = "apeglm"
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ relevel_function(
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 
 \item{localFit}{Use a fitType=local for mean dispersion fit in DESeq2}
+
+\item{shrinkage.given}{LFC shrinkage estimator provided. Available: apeglm, ashr or normal}
 }
 \description{
 When running DESeq2 you sometimes require to relevel some comparisons

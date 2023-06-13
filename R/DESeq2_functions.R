@@ -363,6 +363,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   select <- rownames(sign.data)[1:50]
   select <- select[!is.na(select)] ## discard NA values
   
+  
+  data2pheatmap <- discard_0_counts(countsF = assay(vsd), cutoff = 0.75)
+  
   if ( length(select) > 5 ) {
     
     ## plot rld
@@ -378,7 +381,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     #                              plot_given = plot1)
     
     ## plot vsd
-    plot2 <- pheatmap(assay(vsd)[select,],
+    plot2 <- pheatmap(data2pheatmap[select,],
                       main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                       cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                       annotation_col = df_treatment_Ind[,list_of_cols],
@@ -394,7 +397,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     if (!is.null(listOfSampls)) {
       
       ## Only samples included in comparison
-      dataSubset <- try(assay(vsd)[select,listOfSampls], silent = TRUE)
+      dataSubset <- try(data2pheatmap[select,listOfSampls], silent = TRUE)
       
       if (exists("dataSubset")) {
         
@@ -744,11 +747,12 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
+#' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @export
 relevel_function <- function(dds_object, category, reference, 
                              given_dir, dfAnnotation, list_of_cols, gene.annot.df.given,
                              int_threads=2, sign_value.given = 0.05, LFC.given = log2(1.2), 
-                             comp_ID.given="comp1", forceResults=FALSE, localFit=FALSE){
+                             comp_ID.given="comp1", forceResults=FALSE, localFit=FALSE, shrinkage.given='apeglm'){
   ## relevel
   dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
   
@@ -781,7 +785,7 @@ relevel_function <- function(dds_object, category, reference,
         OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
         sign_value.given = sign_value.given, LFC.given = LFC.given,
         threads = as.numeric(int_threads), gene.annot.df = gene.annot.df.given,
-        forceResults = forceResults)
+        forceResults = forceResults, shrinkage = shrinkage.given)
       
       ## save to return
       #print (head(res_dds))
