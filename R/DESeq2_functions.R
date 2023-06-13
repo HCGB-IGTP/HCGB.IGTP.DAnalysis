@@ -381,17 +381,19 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     #                              plot_given = plot1)
     
     ## plot vsd
-    plot2 <- pheatmap(data2pheatmap[select,],
+    plot2 <- try(pheatmap(data2pheatmap[select,],
                       main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                       cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                       annotation_col = df_treatment_Ind[,list_of_cols],
                       color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
                       scale="row" ## centered and scale values per row7
-    )
+    ))
     
-    HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample,
+    if (!is.null(plot2)) {
+      HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample,
                                   name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz_allSamples"),
                                   plot_given = plot2)
+    }
     
     
     if (!is.null(listOfSampls)) {
@@ -418,16 +420,20 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
         #         plot_given = plot3)
         
         ## plot vsd
-        plot4 <- pheatmap(dataSubset,
+        plot4 <- try(pheatmap(dataSubset,
                           main=paste0("Variance Stabilization Pheatmap (p.adj<", sign_value.given, " and [LFC]>", LFC.given),
                           cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                           annotation_col = df_treatment_Ind[,list_of_cols],
                           color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)),
                           scale="row" ## centered and scale values per row7
-        )
+        ))
+        
+        if (!is.null(plot4)) {
+          
         save_pdf(folder_path = OUTPUT_Data_sample,
                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap-VarianceStabiliz"),
                  plot_given = plot4)
+        }
       }
       
     }
