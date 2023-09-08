@@ -157,4 +157,3 @@ df.factorizer <- function(given.df, col_names.given, mode="factor"){
   }
   return(given.df)
 }
-

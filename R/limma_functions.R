@@ -41,8 +41,10 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
     c.dir <- file.path(OUTPUT_Data_sample, c)
     dir.create(c.dir)
     
-    results.limma <- limma_DE_function(efit_3 = efit_3, normData =  normData, df_treatment_Ind = df_treatment_Ind, design.given = design.given, 
-                                       contrasts.matrix.given = contrasts.matrix.given, coef.given = c, OUTPUT_Data_sample = c.dir,
+    results.limma <- limma_DE_function(efit_3 = efit_3, normData =  normData, 
+                                       df_treatment_Ind = df_treatment_Ind, design.given = design.given, 
+                                       contrasts.matrix.given = contrasts.matrix.given, 
+                                       coef.given = c, OUTPUT_Data_sample = c.dir,
                                        comp_name = comp_name, numerator=numerator, denominator = denominator,
                                        pCutoff.given=0.05, FCcutoff.given=log2(1.2), forceResults=forceResults)
     
@@ -226,7 +228,7 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
     } else {
       ## Only samples included in comparison
       ## plot rld
-      data2heatmap2 = data2heatmap[,c(listOfSampls$numerator, listOfSampls$denominator)]
+      data2heatmap2 = data2heatmap[,c(Samplslist$numerator, Samplslist$denominator)]
       plot2 <- pheatmap(head(data2heatmap2, 50), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
                         cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                         annotation_col = df_treatment_Ind,

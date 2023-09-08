@@ -318,3 +318,34 @@ plot_genes <- function(data_frame_given, name_given, RnBead_object, sample.group
   }
 }
 
+#' Load Beta Values
+#'
+#' This functions Reads into a dataframe the Beta values CSV file from RnBeads Track and table export module. 
+#' Removes missing rows using delete_na()
+#' @param betas_table_file Absolute path to CSV file
+#' @param allow_missing_p Default=0.95. Allows only 5% missing data
+#' @export
+load_beta_values <- function(betas_table_file, allow_missing_p=0.95) {
+  betas_table <- read.table(betas_table_file, sep = ',', 
+                            header = TRUE, check.names = FALSE)
+  
+  ## remove unnecessary
+  betas_table$Chromosome <- NULL
+  betas_table$Strand <- NULL
+  betas_table$Start <- NULL
+  betas_table$End <- NULL
+  
+  ## rename column names
+  #colnames(betas_table)[2] <- "chromosome"
+  #colnames(betas_table)[3] <- "start"
+  #colnames(betas_table)[4] <- "end"
+  #colnames(betas_table)[5] <- "strand"
+  
+  ## Set rownames
+  rownames(betas_table) <- betas_table$ID
+  betas_table$ID <- NULL
+  
+  ## Allow only allow_missing_p% missing values
+  betas_table <- delete_na(betas_table, round(allow_missing_p*ncol(betas_table)))
+  return(betas_table)
+}
