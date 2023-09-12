@@ -201,6 +201,7 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
   #--------------------------
   if (EPIC) {
     print("No Volcano file generated for EPIC results")
+    plt_volcano <- "No plot available"
   } else {
     
   #--------------------------
