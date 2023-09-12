@@ -17,7 +17,8 @@ limma_DE_function(
   denominator,
   pCutoff.given = 0.05,
   FCcutoff.given = log2(1.2),
-  forceResults = FALSE
+  forceResults = FALSE,
+  EPIC = FALSE
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ limma_DE_function(
 \item{FCcutoff.given}{Log Fold change cutoff. Default=log2(1.2),}
 
 \item{forceResults}{Set flag to force results if previously generated. Default=FALSE}
+
+\item{EPIC}{Boolean to indicate EPIC probes, avoid generating huge xlsx file. Default=FALSE}
 }
 \description{
 This functions creates limma DE analysis

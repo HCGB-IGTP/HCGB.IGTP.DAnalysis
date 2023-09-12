@@ -11,10 +11,12 @@
 #' @param pCutoff.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param FCcutoff.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Set flag to force results if previously generated. Default=FALSE
+#' @param EPIC Boolean to indicate EPIC probes, avoid generating huge xlsx file. Default=FALSE
 #' @export
 get_limma_results <- function(normData, df_treatment_Ind, design.given, contrasts.matrix.given, 
                               coef.given.list, OUTPUT_Data_sample,
-                              comp_name,  pCutoff.given=0.05, FCcutoff.given=log2(1.2), forceResults=FALSE) {
+                              comp_name,  pCutoff.given=0.05, 
+                              FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE) {
   
   
   # model.matrix: 
@@ -46,7 +48,8 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
                                        contrasts.matrix.given = contrasts.matrix.given, 
                                        coef.given = c, OUTPUT_Data_sample = c.dir,
                                        comp_name = comp_name, numerator=numerator, denominator = denominator,
-                                       pCutoff.given=0.05, FCcutoff.given=log2(1.2), forceResults=forceResults)
+                                       pCutoff.given=0.05, FCcutoff.given=log2(1.2), 
+                                       forceResults=forceResults, EPIC=EPIC)
     
     results_list[[c]] = results.limma
     
@@ -82,11 +85,13 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
 #' @param pCutoff.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param FCcutoff.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Set flag to force results if previously generated. Default=FALSE
+#' @param EPIC Boolean to indicate EPIC probes, avoid generating huge xlsx file. Default=FALSE
+
 #' @export
 limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, contrasts.matrix.given, 
                               coef.given, OUTPUT_Data_sample,
                               comp_name, numerator, denominator,
-                              pCutoff.given=0.05, FCcutoff.given=log2(1.2), forceResults=FALSE) {
+                              pCutoff.given=0.05, FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE) {
   
   library(EnhancedVolcano)
   
@@ -175,30 +180,42 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
               sep="\t", row.names=T, col.names=NA, quote=TRUE)
   
   
-  library(openxlsx)
-  
-  DE.filename <- file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting.xlsx"))
-  sheet_name <- file_name
-  title_name <- paste0("Comparison for coefficient: ", coef.given)
-  
-  wb <- openxlsx::createWorkbook()
-  openxlsx::addWorksheet(wb, sheet_name)
-  openxlsx::writeData(wb, sheet_name, title_name, startRow = 2, startCol=2,rowNames = FALSE, keepNA=TRUE,na.string="NA")
-  openxlsx::writeData(wb, sheet_name, alldata.norm.res, startRow = 4, startCol=2, rowNames = FALSE, keepNA=TRUE,na.string="NA")
-  openxlsx::saveWorkbook(wb, DE.filename, overwrite = TRUE)
-  
+  if (EPIC) {
+    print("No XLSX file generated for EPIC results")
+  } else {
+    library(openxlsx)
+    
+    DE.filename <- file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting.xlsx"))
+    sheet_name <- file_name
+    title_name <- paste0("Comparison for coefficient: ", coef.given)
+    
+    wb <- openxlsx::createWorkbook()
+    openxlsx::addWorksheet(wb, sheet_name)
+    openxlsx::writeData(wb, sheet_name, title_name, startRow = 2, startCol=2,
+                        rowNames = FALSE, keepNA=TRUE,na.string="NA")
+    openxlsx::writeData(wb, sheet_name, alldata.norm.res, startRow = 4, startCol=2, 
+                        rowNames = FALSE, keepNA=TRUE,na.string="NA")
+    openxlsx::saveWorkbook(wb, DE.filename, overwrite = TRUE)
+    
+  }
   #--------------------------
-  
+  if (EPIC) {
+    print("No Volcano file generated for EPIC results")
+  } else {
+    
   #--------------------------
   ## add volcano plot
   #--------------------------
   plt_volcano <- EnhancedVolcano::EnhancedVolcano(all_data.res, 
                                                   x="logFC", y="adj.P.Val", lab="",
                                                   pCutoff=0.05, FCcutoff=log2(1.2), pointSize=3, labSize=6) + 
-    ggplot2::scale_x_continuous() + ggplot2::labs(title = paste0("Comparison for ", name.cmp) )
+    ggplot2::scale_x_continuous() + 
+    ggplot2::labs(title = paste0("Comparison for ", name.cmp) )
   
   HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                name_file = paste0(file_name, "_DiffExpression-volcano-plot"), plot_given = plt_volcano)
+                                name_file = paste0(file_name, "_DiffExpression-volcano-plot"), 
+                                plot_given = plt_volcano)
+  }
   #--------------------------
   
   #--------------------------
@@ -236,7 +253,8 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
                         scale="row" ## centered and scale values per row
       )
       HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                    name_file = paste0(file_name, "_top50_DEgenes_Heatmap_Samples"), plot_given = plot2)
+                                    name_file = paste0(file_name, "_top50_DEgenes_Heatmap_Samples"), 
+                                    plot_given = plot2)
       results_list[['heatmap.only']] = plot2
       
     }
