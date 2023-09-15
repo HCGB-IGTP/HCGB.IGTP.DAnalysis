@@ -4,10 +4,10 @@
 \alias{get_chr_len}
 \title{Return dataframe with chromosome length for hg19 genome}
 \usage{
-get_chr_len(hg19 = TRUE)
+get_chr_len(genome_version = "hg38")
 }
 \arguments{
-\item{hg19}{Default. Only option available}
+\item{genome_version}{Set hg38 or hg19. Default: hg38}
 }
 \description{
 This functions returns chromosome length for hg19 genome

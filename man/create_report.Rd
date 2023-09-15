@@ -4,7 +4,7 @@
 \alias{create_report}
 \title{Annotates GR Report for each region of bumps provided}
 \usage{
-create_report(bump_table, out_report, df_chr)
+create_report(bump_table, out_report, df_chr, EPIC = "v2")
 }
 \arguments{
 \item{bump_table}{Bumphunter dataframe}
@@ -12,6 +12,8 @@ create_report(bump_table, out_report, df_chr)
 \item{out_report}{Not used anymore, to be discarded}
 
 \item{df_chr}{Dataframe generated as in get_chr_len() containing names and length for each Chromosome of interest}
+
+\item{EPIC}{Set v1 or v2 for annotation. It uses hg19 for EPICv1 or hg38 for EPICv2. Default: v2}
 }
 \description{
 This functions create a GR object with the regions of interest from bump_table provided

@@ -4,9 +4,20 @@
 #' @param bump_table Bumphunter dataframe
 #' @param out_report Not used anymore, to be discarded
 #' @param df_chr Dataframe generated as in get_chr_len() containing names and length for each Chromosome of interest
+#' @param EPIC Set v1 or v2 for annotation. It uses hg19 for EPICv1 or hg38 for EPICv2. Default: v2
 #' @export
-create_report <- function(bump_table, out_report, df_chr) {
+create_report <- function(bump_table, out_report, df_chr, EPIC='v2') {
   library(GenomicRanges)
+  
+  ## Use hg19 for EPICv1 or hg38 for EPICv2   
+  if (EPIC=="v2") {
+    library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+    txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene::TxDb.Hsapiens.UCSC.hg38.knownGene
+    
+  } else {
+    library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+    txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene::TxDb.Hsapiens.UCSC.hg19.knownGene
+  }
   
   ####
   regions <- GRanges(
@@ -29,11 +40,10 @@ create_report <- function(bump_table, out_report, df_chr) {
   seqlengths(regions) <- df_chr[unique(bump_table$chr),]
   
   #library(regionReport)
-    #report <- renderReport(regions, name, pvalueVars=NULL, 
-    #densityVars=c("Area" = "area", "Value"="value","Cluster Length" = "clusterL"),significantVar=NULL,output="report", outdir=out_report,device="png"
+  #report <- renderReport(regions, name, pvalueVars=NULL, 
+  #densityVars=c("Area" = "area", "Value"="value","Cluster Length" = "clusterL"),significantVar=NULL,output="report", outdir=out_report,device="png"
   #)
-  library('TxDb.Hsapiens.UCSC.hg19.knownGene')
-  txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene::TxDb.Hsapiens.UCSC.hg19.knownGene
+  
   genes <- annotateTranscripts(txdb=txdb)  
   annotation <- matchGenes(x = regions, subject = genes)
   if (nrow(annotation) == 0) {
@@ -50,6 +60,7 @@ create_report <- function(bump_table, out_report, df_chr) {
   
   return(list2return)
 }
+
 
 #' Filter bumps and retain more significant
 #'
@@ -92,12 +103,21 @@ save_bed_info <- function(bump_table, file_out) {
 #' Return dataframe with chromosome length for hg19 genome
 #'
 #' This functions returns chromosome length for hg19 genome
-#' @param hg19 Default. Only option available
+#' @param genome_version Set hg38 or hg19. Default: hg38
 #' @export
-get_chr_len <- function(hg19=TRUE){
+get_chr_len <- function(genome_version='hg38'){
   
-  ## hg19 information
-  if (hg19) {
+  ## hg38 information
+  if (genome_version=='hg38') {
+    library(BSgenome.Hsapiens.UCSC.hg38)
+    print("hg38 information")
+    df_chr <- as.data.frame(seqinfo(BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38))[1:25,]
+    df_chr$isCircular <- NULL
+    df_chr$genome <- NULL
+    colnames(df_chr)[1] <- 'chr_length'
+    
+    ## hg19 information
+  } else if (genome_version=='hg19') {
     print("hg19 information")
     ## get chr length
     chr_list <- c("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10",
@@ -117,7 +137,6 @@ get_chr_len <- function(hg19=TRUE){
   
   return(df_chr)
 }
-
 
 #' Create limma analysis for each probe
 #'
@@ -165,49 +184,37 @@ get_probes_limma <- function(values_df, design_given, contrasts.matrix_given , p
   return(results_limma)
 }
 
-
-getBumps <- function (beta_values, desing, dir_name, name, chr_len, intersecter_cmd, EPIC_850.probes,
-                      cutoff_given=0.2, clusterL_given=3, L_given=3, coef_given=2, permuts=50) {
-  ## get bumps
-  ## bumphunter analysis, filter
-  bumphunter_obj <- minfi::bumphunter(beta_values, desing, B=permuts, type="Beta", 
-                                      cutoff=cutoff_given, coef=coef_given, smooth=TRUE)
-  comp_bumps <- filter_bump_table(bumphunter_obj$table, clusterL_given = clusterL_given, L_given=L_given)
+#' Get mean beta values for two list of samples
+#'
+#' This functions obtains a mean beta value for each group of samples
+#' @param table_dat Dataframe with probes as rownames
+#' @param beta_val Dataframe containing beta_values for each probe and sample (columns)
+#' @param list1 Vector of samples to test fro group1
+#' @param list1 Vector of samples to test fro group2
+#' @export
+get_beta_mean_vals <- function(table_dat, beta_val, list1, list2) {
+  ## Calculate diff mean
+  table_dat['mean.group1'] <-rowMeans(beta_val[rownames(table_dat),list1])
+  table_dat['mean.group2'] <-rowMeans(beta_val[rownames(table_dat),list2])
+  table_dat['diff.mean'] <- abs(table_dat$mean.group1 - table_dat$mean.group2)
+  table_dat['sign'] <- ifelse(table_dat$mean.group1 - table_dat$mean.group2 > 0,"up", "down")
   
-  ## dirname
-  comp_dir <- dir_name
-  dir.create(comp_dir)
-  
-  ## get regions
-  comp_regions <- create_report(bumphunter_obj$table, comp_dir, df_chr = chr_len)
-  write.csv(x=comp_regions$regions.df, file=file.path(comp_dir, paste0(name, '-annotated.csv')))
-  
-  comp_bed_file <- file.path(comp_dir, paste0(name, '-all_bumps.bed'))
-  save_bed_info(bumphunter_obj$table, file_out = comp_bed_file)
-  
-  ## create bed annotation
-  cmd = paste0(intersecter_cmd, " ", name, " ", comp_bed_file, " ", EPIC_850.probes)
-  setwd(comp_dir)
-  system(cmd)
-  
-  if (nrow(comp_bumps)==0 ) {
-    print("No bumps retained after filtering...")
-  } else {
-    write.csv(x=comp_bumps, file=file.path(comp_dir, paste0(name, ".csv")))    
-  }
-  
-  ## save output
-  write.csv(x=bumphunter_obj$table, file=file.path(comp_dir, paste0(name, "-unfiltered.csv")))
-  
-  bumps.list <- list("bumphunter_obj"=bumphunter_obj,
-                     "comp_bumps" = comp_bumps,
-                     "comp_regions"=comp_regions)
-  
-  return(bumps.list)
+  return(table_dat)
 }
 
 
 
+#' Filter dmpFinder methylation stats
+#'
+#' This functions obtains a mean beta value for each group of samples and filters based on statistics
+#' @param dmpData Dataframe with probes as rownames
+#' @param beta_val Dataframe containing beta_values for each probe and sample (columns)
+#' @param list1 Vector of samples to test fro group1
+#' @param list1 Vector of samples to test fro group2
+#' @param pval Pvalue filtering cutoff. Default: 0.05
+#' @param qval Pvalue adjusted filtering cutoff. Default: 0.05
+#' @param diff.mean Mean difference (absolute values) for filtering
+#' @export
 
 filter_dmpFinder_table <- function(dmpData, beta_val, list1, list2, pval=0.05, qval=0.05, diff.mean=0.2) {
   
@@ -216,11 +223,7 @@ filter_dmpFinder_table <- function(dmpData, beta_val, list1, list2, pval=0.05, q
   #dmpData <- na.omit(dmpData)
   
   ## Calculate diff mean
-  dmpData['diff.mean'] <-rowMeans(beta_val[rownames(dmpData),list1]) - rowMeans(beta_val[rownames(dmpData),list2 %in% colnames(beta_val)])
-  
-  #print(head(dmpData))
-  #print(head(beta_val))
-  #print(head(dmpData$diff.mean))
+  dmpData <- get_beta_mean_vals(table_dat = dmpData, beta_val = beta_val, list1=list1, list2=list2)
   
   ## filter
   dmpData <- dmpData[dmpData$pval <= pval,]
