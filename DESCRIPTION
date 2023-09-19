@@ -1,6 +1,6 @@
 Package: HCGB.IGTP.DAnalysis
 Title: Useful in-house functions for multiple analysis
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: 
     person(given = "Jose Francisco",
            family = "Sanchez-Herrero",
