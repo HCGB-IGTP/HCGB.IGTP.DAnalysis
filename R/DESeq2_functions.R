@@ -512,10 +512,9 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       }
       
       if (!is.null(gene.annot.df)) {
-        p2 <- p2 + ggtitle(subtitle = paste0("Name: ", gene_annot.df$hgnc_symbol, 
+        p2 <- p2 + ggtitle(label = i, 
+                           subtitle = paste0("Name: ", gene_annot.df$hgnc_symbol, 
                                              ". Description: ", gene_annot.df$description))
-      } else {
-        p2
       }
       
       print(p2)
