@@ -506,15 +506,17 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     for (i in colnames(df_treatment_Ind[,list_of_cols])) {
       g <- gsub("-", "\\.", g)
       if (is.numeric(df_treatment_Ind[,i])) {
-        p2 <- ggscatter_plotRegression(data_all_given = DE_plots.df, x.given = g, y.given = i, title_string = i)
+        p2 <- ggscatter_plotRegression(data_all_given = DE_plots.df, 
+                                       x.given = g, y.given = i, 
+                                       title_string = i)
       } else {
         p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g)   
       }
       
       if (!is.null(gene.annot.df)) {
-        p2 <- p2 + ggtitle(label = i, 
-                           subtitle = paste0("Name: ", gene_annot.df$hgnc_symbol, 
-                                             ". Description: ", gene_annot.df$description))
+        p2 <- p2 + theme(plot.subtitle = element_text( 
+          paste0("Name: ", gene_annot.df$hgnc_symbol, 
+                 ". Description: ", gene_annot.df$description)))
       }
       
       print(p2)
