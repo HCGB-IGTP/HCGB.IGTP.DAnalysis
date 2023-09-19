@@ -203,7 +203,6 @@ get_beta_mean_vals <- function(table_dat, beta_val, list1, list2) {
 }
 
 
-
 #' Filter dmpFinder methylation stats
 #'
 #' This functions obtains a mean beta value for each group of samples and filters based on statistics
@@ -215,7 +214,6 @@ get_beta_mean_vals <- function(table_dat, beta_val, list1, list2) {
 #' @param qval Pvalue adjusted filtering cutoff. Default: 0.05
 #' @param diff.mean Mean difference (absolute values) for filtering
 #' @export
-
 filter_dmpFinder_table <- function(dmpData, beta_val, list1, list2, pval=0.05, qval=0.05, diff.mean=0.2) {
   
   ## get info
