@@ -513,12 +513,6 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
         p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g)   
       }
       
-      if (!is.null(gene.annot.df)) {
-        p2 <- p2 + theme(plot.subtitle = element_text( 
-          paste0("Name: ", gene_annot.df$hgnc_symbol, 
-                 ". Description: ", gene_annot.df$description)))
-      }
-      
       print(p2)
     }
     dev.off()
