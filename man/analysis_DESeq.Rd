@@ -17,6 +17,8 @@ analysis_DESeq(
   early_return = FALSE,
   comp_ID = NULL,
   cutoff.given = 0.9,
+  min_cutoff_to_plot = 3,
+  max_cutoff_to_plot = 50,
   localFit = FALSE,
   forceResults = FALSE,
   gene.annot = NULL,
@@ -38,13 +40,17 @@ analysis_DESeq(
 
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
-\item{coef_n}{Number of the coefficient of results to test \link{if desired}}
+\item{coef_n}{Number of the coefficient of results to test (if desired)}
 
 \item{early_return}{Whether to return exploratory results early or not}
 
 \item{comp_ID}{Tag name to include for each comparison}
 
 \item{cutoff.given}{add an option to include cutoff when removing Zeros}
+
+\item{min_cutoff_to_plot}{Minimun number of genes significant to continue analysis. Default=3}
+
+\item{max_cutoff_to_plot}{Number of genes significant to plot as candidates analysis. Default=50}
 
 \item{localFit}{Use a fitType=local for mean dispersion fit in DESeq2}
 

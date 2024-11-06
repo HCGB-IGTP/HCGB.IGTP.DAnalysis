@@ -30,5 +30,5 @@ enricher_loop(
 \item{keyType.given}{SYMBOL as default. See keytypes(org.Hs.eg.db) as an example for putative keys to use}
 }
 \description{
-Gets coordinates for the set of genes desired
+Gets gene enrichment using clusterprofiler for the set of genes desired
 }

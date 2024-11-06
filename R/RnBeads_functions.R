@@ -1,5 +1,3 @@
-library(RnBeads)
-
 #' Saves RnBead object
 #'
 #' This functions saves a given RnBeads object in a file and dir provided

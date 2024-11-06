@@ -32,7 +32,7 @@ relevel_function(
 
 \item{dfAnnotation}{Dataframe containing additional information for each sample}
 
-\item{int_threads}{Number of CPUs to use \link{Default: 2}.}
+\item{int_threads}{Number of CPUs to use (Default: 2)}
 
 \item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
 

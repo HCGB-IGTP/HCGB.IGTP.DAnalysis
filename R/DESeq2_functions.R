@@ -35,17 +35,20 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
 #' @param OUTPUT_Data_dir Folder path to store results
 #' @param df_treatment_Ind Dataframe containing additional information for each sample
 #' @param list_of_cols Set of columns with important information in df_treatment_ind 
-#' @param threads Number of CPUs to use [Default: 2].
+#' @param threads Number of CPUs to use (Default: 2).
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param gene.annot.df Dataframe containing gene annotation (Default: NULL)
+#' @param min_cutoff_to_plot Minimun number of genes significant to continue analysis. Default=3
+#' @param max_cutoff_to_plot Number of genes significant to plot as candidates analysis. Default=50
 #' @export
 
 DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
                                 OUTPUT_Data_dir, df_treatment_Ind, list_of_cols, threads=2, 
                                 sign_value.given = 0.05, LFC.given = log2(1.2), gene.annot.df=NULL,
+                                min_cutoff_to_plot=3, max_cutoff_to_plot=50,
                                 forceResults=FALSE, shrinkage="apeglm") {
   
   #--------------------------
@@ -265,7 +268,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   #--------------------------
   print(length(rownames(sign.data)))
   
-  if (length(rownames(sign.data)) < 3) {
+  if (length(rownames(sign.data)) < min_cutoff_to_plot) {
     
     data2save<- list(
       "alldata2" = alldata2,
@@ -358,12 +361,17 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   ### Pheatmap top50 DE genes
   #--------------------------
   
-  print("Plotting Top 50 significant DE genes with different normalization methods")
+  print("Plotting Top significant DE genes with different normalization methods")
+  if (is.null(max_cutoff_to_plot)) {
+    ## use them all
+    select <- rownames(sign.data)
+    max_cutoff_to_plot <- length(rownames(sign.data))
+  } else {
+    select <- rownames(sign.data)[1:max_cutoff_to_plot]
+  }
+  
   # Plotting Top 50 significant DE genes with different normalization methods:
-  select <- rownames(sign.data)[1:50]
   select <- select[!is.na(select)] ## discard NA values
-  
-  
   data2pheatmap <- discard_0_counts(countsF = assay(vsd), cutoff = 0.75)
   
   if ( length(select) > 5 ) {
@@ -484,7 +492,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   print(DE_plots.df)
   
   ## print only top50
-  for (gene_given in head(rownames(sign.data), n=50)) {
+  for (gene_given in head(rownames(sign.data), n=max_cutoff_to_plot)) {
     
     ## 
     g <- gsub("-", "\\.", gene_given)
@@ -746,7 +754,7 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param reference Name of the reference class to set.
 #' @param given_dir Output dir to use
 #' @param dfAnnotation Dataframe containing additional information for each sample
-#' @param int_threads Number of CPUs to use [Default: 2].
+#' @param int_threads Number of CPUs to use (Default: 2)
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
@@ -1048,7 +1056,7 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param OUTPUT_Data_dir_given Absolute path to store results
 #' @param int_threads Number of threads to use
 #' @param formula_given Design formula to use
-#' @param coef_n Number of the coefficient of results to test [if desired]
+#' @param coef_n Number of the coefficient of results to test (if desired)
 #' @param early_return Whether to return exploratory results early or not
 #' @param comp_ID Tag name to include for each comparison
 #' @param cutoff.given add an option to include cutoff when removing Zeros
@@ -1058,12 +1066,28 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param gene.annot Dataframe containing gene annotation (Default: NULL)
 #' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
+#' @param min_cutoff_to_plot Minimun number of genes significant to continue analysis. Default=3
+#' @param max_cutoff_to_plot Number of genes significant to plot as candidates analysis. Default=50
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
                            list_of_cols, formula_given, int_threads=2,
                            sign_value.given = 0.05, LFC.given = log2(1.2),
-                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, 
+                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, min_cutoff_to_plot=3, max_cutoff_to_plot=50,
                            localFit=FALSE, forceResults=FALSE, gene.annot=NULL, shrinkage.given="apeglm") {
+  
+  #--------------------------
+  # Packages
+  #--------------------------
+  library(DESeq2)
+  library(vsn)
+  library(EnhancedVolcano)
+  library(BiocParallel)
+  library(ggfortify)
+  library(ggrepel)
+  library(pheatmap)
+  library(reshape2)
+  library(RColorBrewer)
+  #--------------------------
   
   dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
   
@@ -1153,6 +1177,7 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
                                  OUTPUT_Data_dir_given = OUTPUT_Data_dir_given, 
                                  dfAnnotation = sample_sheet_given, list_of_cols, comp_ID = comp_ID, 
                                  sign_value.given = sign_value.given, LFC.given = LFC.given, gene.annot=gene.annot,
+                                 min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
                                  int_threads = int_threads, coef_n = coef_n, forceResults=forceResults, shrinkage.given=shrinkage.given)
   #############
   
@@ -1292,15 +1317,19 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 #' @param dfAnnotation Dataframe with useful metadata to include
 #' @param comp_ID Tag name to include for each comparison
 #' @param int_threads Number of threads to use in the analysis
-#' @param coef_n Number of the coefficient of results to test [if desired]
+#' @param coef_n Number of the coefficient of results to test (if desired)
 #' @param sign_value.given Adjusted pvlaue cutoff. Default=0.05, 
 #' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param gene.annot Dataframe containing gene annotation (Default: NULL)
 #' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
+#' @param min_cutoff_to_plot Minimun number of genes significant to continue analysis. Default=3
+#' @param max_cutoff_to_plot Number of genes significant to plot as candidates analysis. Default=50
+
 #' @export
 get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, list_of_cols, comp_ID,
                             sign_value.given = 0.05, LFC.given = log2(1.2),
+                            min_cutoff_to_plot=3, max_cutoff_to_plot=50,
                             int_threads=2, coef_n=NA, forceResults=FALSE, gene.annot=NULL, shrinkage.given='apeglm') {
   ###########
   # Get results
@@ -1317,6 +1346,7 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
       OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
       list_of_cols = list_of_cols,
       sign_value.given = sign_value.given, LFC.given = LFC.given,
+      min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
       threads = as.numeric(int_threads), forceResults=forceResults, gene.annot.df = gene.annot, shrinkage=shrinkage.given))
     
     ## save to return
@@ -1336,7 +1366,8 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
           dds_object = dds_object, coef_n = coef_name, comp_ID = comp_ID,
           comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
           OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
-          sign_value.given = sign_value.given, LFC.given = LFC.given,
+          sign_value.given = sign_value.given, LFC.given = LFC.given, 
+          min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
           threads = as.numeric(int_threads), forceResults=forceResults, gene.annot=gene.annot, shrinkage=shrinkage.given))
         
         ## save results

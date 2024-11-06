@@ -457,7 +457,7 @@ get_gene_coordinates <- function(Genelist, species="hsapiens_gene_ensembl") {
 
 #' Create gene ontology enrichment for a given dataset
 #'
-#' Gets coordinates for the set of genes desired
+#' Gets gene enrichment using clusterprofiler for the set of genes desired
 #' @param list_of_sets List of dataset to use
 #' @param geneUniverse List of total genes to use as "Universe"
 #' @param GO_folder Folder to store results
@@ -467,7 +467,8 @@ get_gene_coordinates <- function(Genelist, species="hsapiens_gene_ensembl") {
 #' @param keyType.given SYMBOL as default. See keytypes(org.Hs.eg.db) as an example for putative keys to use
 #' @export
 enricher_loop <- function (list_of_sets, geneUniverse, GO_folder, tag2use,
-                           org.Db2use='org.Hs.eg.db', ont_types = c('CC', 'BP', 'MF'), keyType.given='SYMBOL'){
+                           org.Db2use='org.Hs.eg.db', 
+                           ont_types = c('CC', 'BP', 'MF'), keyType.given='SYMBOL'){
   library(clusterProfiler)
   library(AnnotationDbi)
   library(openxlsx)
@@ -500,10 +501,11 @@ enricher_loop <- function (list_of_sets, geneUniverse, GO_folder, tag2use,
         
         print("save results")
         dat <- head(res, n = 100)
-        
-        if (dim(dat)[1]>10) {
+        p <- ""
+        if (dim(dat)[1]>1) {
           p <- enrichplot::dotplot(res)
-          save_pdf(p, folder_path = GO_folder, name_file = paste0(tag2use, "_", name2use)  )
+          save_pdf(p, folder_path = GO_folder, 
+                   name_file = paste0(tag2use, "_", name2use)  )
         }
         # save results
         write.csv(dat, file=file.path(GO_folder, paste0(tag2use, "_", name2use, ".csv")))
@@ -526,5 +528,43 @@ enricher_loop <- function (list_of_sets, geneUniverse, GO_folder, tag2use,
   saveWorkbook(wb, xlsx_file, overwrite = TRUE)
   
   return(results2save)  
+}
+
+#' Create gprofiler gene ontology enrichment for a given dataset
+#'
+#' @param genes_of_interest List of genes (ENSEMBL ids)
+#' @param dirsave Folder to store results
+#' @param name2use Name tag to add
+#' @param significant_ Flag to show only significant (default) or any result ranked by pvalue
+#' @param organism2use Organism species name. Default: hsapiens
+#' @export
+gprofiler_analysis <- function(genes_of_interest, dir2save, 
+                               name2use, significant_=TRUE, organism2use="hsapiens") {
+  
+  library(org.Hs.eg.db)
+  library(gprofiler2)
+  gostres_candidates <- gost(query = genes_of_interest, 
+                             organism = organism2use, 
+                             significant = significant_)
+  head(gostres_candidates$result)
+  
+  plot_interactive <- gostplot(gostres_candidates, 
+                               capped = FALSE, interactive = TRUE)
+  
+  # list to string
+  gostres_candidates$result <- gostres_candidates$result %>% 
+    mutate(parents_list = paste(parents, " "))
+  gostres_candidates$result$parents <- NULL
+  
+  print(head(gostres_candidates$result))
+  
+  ## save
+  write.csv(gostres_candidates$result, 
+            file = file.path(dir2save, paste0(name2use, "_gprofiler_res.csv")))
+  
+  htmlwidgets::saveWidget(widget = plot_interactive, 
+                          file = file.path(dir2save, paste0(name2use, "_gprofiler.html")))
+  
+  plot_interactive
 }
 

@@ -12,6 +12,8 @@ get_Results_DDS(
   comp_ID,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
+  min_cutoff_to_plot = 3,
+  max_cutoff_to_plot = 50,
   int_threads = 2,
   coef_n = NA,
   forceResults = FALSE,
@@ -32,9 +34,13 @@ get_Results_DDS(
 
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
+\item{min_cutoff_to_plot}{Minimun number of genes significant to continue analysis. Default=3}
+
+\item{max_cutoff_to_plot}{Number of genes significant to plot as candidates analysis. Default=50}
+
 \item{int_threads}{Number of threads to use in the analysis}
 
-\item{coef_n}{Number of the coefficient of results to test \link{if desired}}
+\item{coef_n}{Number of the coefficient of results to test (if desired)}
 
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 

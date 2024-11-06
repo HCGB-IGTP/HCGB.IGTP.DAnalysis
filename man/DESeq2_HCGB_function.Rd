@@ -18,6 +18,8 @@ DESeq2_HCGB_function(
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
   gene.annot.df = NULL,
+  min_cutoff_to_plot = 3,
+  max_cutoff_to_plot = 50,
   forceResults = FALSE,
   shrinkage = "apeglm"
 )
@@ -41,13 +43,17 @@ DESeq2_HCGB_function(
 
 \item{list_of_cols}{Set of columns with important information in df_treatment_ind}
 
-\item{threads}{Number of CPUs to use \link{Default: 2}.}
+\item{threads}{Number of CPUs to use (Default: 2).}
 
 \item{sign_value.given}{Adjusted pvlaue cutoff. Default=0.05,}
 
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
 \item{gene.annot.df}{Dataframe containing gene annotation (Default: NULL)}
+
+\item{min_cutoff_to_plot}{Minimun number of genes significant to continue analysis. Default=3}
+
+\item{max_cutoff_to_plot}{Number of genes significant to plot as candidates analysis. Default=50}
 
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
