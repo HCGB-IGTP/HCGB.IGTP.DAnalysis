@@ -530,7 +530,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     ##
     print(g)
     if (!is.null(gene.annot.df)) {
-      gene_annot.df <- gene.annot.df.clean[gene_given,]
+      gene_annot.df <- gene.annot.df[gene_given,]
       if (data_type=="mRNA") {
         gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
       } else if (data_type=="miRNA") {
@@ -701,6 +701,7 @@ plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_fold
   ## check if DE table and contains Gene, pvalue, etc
   gene_table <- dplyr::select(gene_table, -c("Gene", "baseMean", "log2FoldChange", "lfcSE","pvalue","padj"))
   print(gene_table)
+  
   
   ## melt data
   gene_table_long <- melt(gene_table,variable.name="sample", value.name="Count")
