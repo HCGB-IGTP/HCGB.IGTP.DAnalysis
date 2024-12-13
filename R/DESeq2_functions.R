@@ -47,8 +47,9 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
 DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
                                 OUTPUT_Data_dir, df_treatment_Ind, list_of_cols, threads=2, 
-                                sign_value.given = 0.05, LFC.given = log2(1.2), gene.annot.df=NULL,
+                                sign_value.given = 0.05, LFC.given = log2(1.2), 
                                 min_cutoff_to_plot=3, max_cutoff_to_plot=50,
+                                gene.annot.df=NULL, data_type="mRNA",
                                 forceResults=FALSE, shrinkage="apeglm") {
   
   #--------------------------
@@ -194,15 +195,24 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                       rownames(subset(subsheet, comp_name==denominator)))
     
     print("List of samples in these comparison")
-    print(listOfSampls)
+    #print(listOfSampls)
     
     Samplslist <- list(
       numerator = rownames(subset(subsheet, comp_name==numerator)),
       denominator = rownames(subset(subsheet, comp_name==denominator))
     )
     
+    print("Samples in numerator")
+    print(Samplslist$numerator)
+    
+    print("Samples in denominator")
+    print(Samplslist$denominator)
+    
     ## Get data for this samples
     ## 
+    
+    print("head(alldata)")
+    print(head(alldata))
     
     ## add basemean for each category
     alldata2['baseMean_num'] <- rowMeans(alldata[,Samplslist$numerator])
@@ -223,10 +233,23 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     
     if (!is.null(gene.annot.df)) {
       
-      list_cols <- c("Gene", "ensembl_gene_id", "hgnc_symbol", "description", "gene_biotype", "baseMean", "baseMean_num", 
+      if (data_type=="mRNA") {
+        list_cols <- c("Gene", "ensembl_gene_id", "hgnc_symbol", "description", "gene_biotype")
+      
+      } else if (data_type=="miRNA") {
+        
+        list_cols <- c("parent", "ID", "Gene", "variant", "len_isomiR")
+        
+      } else {
+        
+      }
+      
+      list_cols <- c(list_cols,
+                     "baseMean", "baseMean_num", 
                      "baseMean_den", "0counts_num", "0counts.perc_num", 
                      "0counts_den", "0counts.perc_den", 
                      "log2FoldChange", "lfcSE", "pvalue", "padj")
+      
       
     } else {
       list_cols <- c("Gene", "baseMean", "baseMean_num", 
@@ -236,7 +259,11 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       
     }
     
+    
     alldata2 <- alldata2[,c(list_cols, Samplslist$numerator, Samplslist$denominator)]
+    
+    print("head(alldata2)")
+    print(head(alldata2))
     
     
     library(openxlsx)
@@ -504,7 +531,11 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     print(g)
     if (!is.null(gene.annot.df)) {
       gene_annot.df <- gene.annot.df.clean[gene_given,]
-      gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
+      if (data_type=="mRNA") {
+        gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
+      } else if (data_type=="miRNA") {
+        gene_name = paste0(gene_annot.df$parent, "_", gene_given)
+      }
       print(gene_name)
     } else {
       gene_name = g
@@ -762,7 +793,8 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @export
 relevel_function <- function(dds_object, category, reference, 
-                             given_dir, dfAnnotation, list_of_cols, gene.annot.df.given,
+                             given_dir, dfAnnotation, list_of_cols, 
+                             data_type="mRNA", gene.annot.df.given=NULL,
                              int_threads=2, sign_value.given = 0.05, LFC.given = log2(1.2), 
                              comp_ID.given="comp1", forceResults=FALSE, localFit=FALSE, shrinkage.given='apeglm'){
   ## relevel
@@ -796,7 +828,8 @@ relevel_function <- function(dds_object, category, reference,
         numerator = listNames[2], denominator = listNames[3],
         OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
         sign_value.given = sign_value.given, LFC.given = LFC.given,
-        threads = as.numeric(int_threads), gene.annot.df = gene.annot.df.given,
+        threads = as.numeric(int_threads), 
+        gene.annot.df = gene.annot.df.given, data_type = data_type,
         forceResults = forceResults, shrinkage = shrinkage.given)
       
       ## save to return
@@ -1072,9 +1105,11 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
                            list_of_cols, formula_given, int_threads=2,
                            sign_value.given = 0.05, LFC.given = log2(1.2),
-                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, min_cutoff_to_plot=3, max_cutoff_to_plot=50,
-                           localFit=FALSE, forceResults=FALSE, gene.annot=NULL, shrinkage.given="apeglm") {
-  
+                           coef_n=NA, early_return=FALSE, comp_ID=NULL, cutoff.given=0.9, 
+                           localFit=FALSE, forceResults=FALSE, min_cutoff_to_plot=3, max_cutoff_to_plot=50,
+                           gene.annot=NULL, data_type = "mRNA",
+                           shrinkage.given="apeglm") {
+
   #--------------------------
   # Packages
   #--------------------------
@@ -1176,8 +1211,9 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
   results_list = get_Results_DDS(dds_object = dds_object, 
                                  OUTPUT_Data_dir_given = OUTPUT_Data_dir_given, 
                                  dfAnnotation = sample_sheet_given, list_of_cols, comp_ID = comp_ID, 
-                                 sign_value.given = sign_value.given, LFC.given = LFC.given, gene.annot=gene.annot,
+                                 sign_value.given = sign_value.given, LFC.given = LFC.given, 
                                  min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
+                                 gene.annot=gene.annot, data_type = data_type,
                                  int_threads = int_threads, coef_n = coef_n, forceResults=forceResults, shrinkage.given=shrinkage.given)
   #############
   
@@ -1329,8 +1365,10 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 #' @export
 get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, list_of_cols, comp_ID,
                             sign_value.given = 0.05, LFC.given = log2(1.2),
+                            int_threads=2, coef_n=NA, forceResults=FALSE, 
                             min_cutoff_to_plot=3, max_cutoff_to_plot=50,
-                            int_threads=2, coef_n=NA, forceResults=FALSE, gene.annot=NULL, shrinkage.given='apeglm') {
+                            gene.annot=NULL, data_type = "mRNA", shrinkage.given='apeglm') {
+
   ###########
   # Get results
   #############
@@ -1343,12 +1381,13 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
     res_dds = try(DESeq2_HCGB_function(
       dds_object = dds_object, coef_n = coef_n, comp_name = listNames[1], comp_ID = comp_ID,
       numerator = listNames[2], denominator = listNames[3],
-      OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, 
+      OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation,  
       list_of_cols = list_of_cols,
       sign_value.given = sign_value.given, LFC.given = LFC.given,
       min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
-      threads = as.numeric(int_threads), forceResults=forceResults, gene.annot.df = gene.annot, shrinkage=shrinkage.given))
-    
+      threads = as.numeric(int_threads), forceResults=forceResults, 
+      gene.annot.df = gene.annot, data_type = data_type, shrinkage=shrinkage.given))
+
     ## save to return
     coef_name = as.character(resultsNames(dds_object)[coef_n])
     results_list[[coef_name]] = res_dds
@@ -1366,10 +1405,11 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
           dds_object = dds_object, coef_n = coef_name, comp_ID = comp_ID,
           comp_name = listNames[1], numerator = listNames[2], denominator = listNames[3],
           OUTPUT_Data_dir = OUTPUT_Data_dir_given, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
-          sign_value.given = sign_value.given, LFC.given = LFC.given, 
+          sign_value.given = sign_value.given, LFC.given = LFC.given,
           min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
-          threads = as.numeric(int_threads), forceResults=forceResults, gene.annot=gene.annot, shrinkage=shrinkage.given))
-        
+          threads = as.numeric(int_threads), forceResults=forceResults, 
+          gene.annot=gene.annot, data_type = data_type, shrinkage=shrinkage.given))
+
         ## save results
         results_list[[coef_name]] = res_dds
       }
