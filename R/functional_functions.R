@@ -476,7 +476,6 @@ enricher_loop <- function (list_of_sets, geneUniverse, GO_folder, tag2use,
   wb <- createWorkbook()
   xlsx_file <- file.path(GO_folder, paste0(tag2use, "_enrichGO.xlsx"))
   
-  
   results2save <-list()
   for (ont_T in ont_types) {
     for (set2test in names(list_of_sets)) {

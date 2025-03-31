@@ -17,7 +17,7 @@ maplot <- function (res, thresh=0.05, textcex=1, ...) {
 #' Uses 10 as default.
 #' 
 #' @param dds_object DESeq2 object 
-#' @param min_count integer for minimum count cutoff [Default=10]. 
+#' @param min_count integer for minimum count cutoff (Default=10). 
 #' @export
 ##  #####
 discard_lowCounts = function(dds_object, min_count=10) {
@@ -64,7 +64,7 @@ discard_0_counts <- function(countsF, cutoff=0.9) {
 #'
 #' This functions discard low counts in a dataframe with any non-numeric column
 #' @param df_given Dataframe to pase
-#' @param min_count Minimum count to use as cutoff [Default: 10].
+#' @param min_count Minimum count to use as cutoff (Default: 10).
 #' @export
 discard_lowCounts_df = function(df_given, min_count=10) {
   df_given <- df_given %>% mutate(total=rowSums(select_if(., is.numeric)))

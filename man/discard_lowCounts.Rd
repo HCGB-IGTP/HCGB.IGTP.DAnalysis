@@ -10,7 +10,7 @@ discard_lowCounts(dds_object, min_count = 10)
 \arguments{
 \item{dds_object}{DESeq2 object}
 
-\item{min_count}{integer for minimum count cutoff \link{Default=10}.}
+\item{min_count}{integer for minimum count cutoff (Default=10).}
 }
 \description{
 This functions discard low counts in a DESeq object.

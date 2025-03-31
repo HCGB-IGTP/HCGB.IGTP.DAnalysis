@@ -34,6 +34,56 @@ save_pdf <- function(folder_path, name_file, plot_given) {
   dev.off()
 }
 
+
+#' Save plots in PNG format
+#'
+#' @param folder_path 
+#' @param name_file 
+#' @param plot_given 
+#'
+#' @export
+#'
+save_png <- function(folder_path, name_file, plot_given) {
+  png(file=file.path(folder_path, paste0(name_file, ".png")),
+      width=1200, height=700)
+  print(plot_given)  
+  dev.off()
+  
+}
+
+#' Save plots in JPEG format
+#'
+#' @param folder_path 
+#' @param name_file 
+#' @param plot_given 
+#'
+#' @export
+#'
+save_jpeg <- function(folder_path, name_file, plot_given) {
+  jpeg(filename = file.path(folder_path, paste0(name_file, ".jpeg")),
+       quality = 100,  width=1200, height=700)
+  print(plot_given)  
+  dev.off()
+  
+}
+
+#' Save plots in multiple formats
+#'
+#' @param folder_path 
+#' @param name_file 
+#' @param plot_given 
+#'
+#' @export
+#'
+save_plots_multiformat <- function (folder_path, name_file, plot_given) 
+{
+  print("Save plots in several formats")
+  save_pdf(folder_path, name_file, plot_given = plot_given)
+  save_jpeg(folder_path, name_file, plot_given = plot_given)
+  save_png(folder_path, name_file, plot_given = plot_given)
+}
+
+
 #' Remove NAs in dataframe
 #' 
 #' Filters out dataframe according the amount of NAs allowed
@@ -42,63 +92,6 @@ save_pdf <- function(folder_path, name_file, plot_given) {
 #' @export
 delete_na <- function(DF, n=0) {
   DF[rowSums(is.na(DF)) <= n,]
-}
-
-#' Convert hg19 <-> hg38 coordinates
-#' 
-#' Using rtracklayer and GenomicRanges, this function converts hg19 <-> hg38 coordinates
-#' @param df2convert Coordinate Dataframe provided to convert to GenomicRanges
-#' @param folderWithLiftoverInfo Folder containing liftover chain information retrieved from UCSC website
-#' @param hg19ToHg38 Boolean to transfrom hg19 to hg38
-#' @param hg38ToHg19 Boolean to transfrom hg38 to hg19
-#' @export
-
-litfover_func <- function(df2convert, folderWithLiftoverInfo, 
-                          hg19ToHg38=FALSE, hg38ToHg19=FALSE) {
-  library(rtracklayer)
-  library(GenomicRanges)
-  
-  ## create GRanges
-  df2convert.GR <- GenomicRanges::makeGRangesFromDataFrame(df = df2convert)
-  
-  ## Check info:
-  if (hg19ToHg38) {
-    chain=import.chain(file.path(folderWithLiftoverInfo, "hg19ToHg38.over.chain")) # file downloaded from UCSC
-  } else if (hg38ToHg19) {
-    chain=import.chain(file.path(folderWithLiftoverInfo, "hg38ToHg19.over.chain")) # file downloaded from UCSC
-  } else {
-    print("ERROR: No option provided")
-  }
-  
-  ## convert
-  newLocs=liftOver(x = df2convert.GR, chain = chain)
-  newLocsDF=data.frame(newLocs)
-  
-  ## check if there are some duplicates
-  #rownames(newLocsDF) <- newLocsDF$group_name
-  n_occur <- data.frame(table(newLocsDF$group_name))
-  #df2convert.GR[n_occur[n_occur$Freq > 1,]$Var1,]
-  #subset(newLocsDF, group_name %in% n_occur[n_occur$Freq > 1,]$Var1)
-  
-  rownames(newLocsDF) <- paste(newLocsDF$group_name, ave(newLocsDF$group_name, newLocsDF$group_name, 
-                                                         FUN=function(i) seq(length(i))), sep='.')
-  #subset(newLocsDF, group_name %in% n_occur[n_occur$Freq > 1,]$Var1)
-  
-  ##
-  if (hg19ToHg38) {
-    df2convert = data.frame(df2convert,"start.hg19"=df2convert$GeneStart)
-    df2convert = data.frame(df2convert,"end.hg19"=df2convert$GeneEnd)
-    df2convert[newLocsDF$group_name,"start.hg38"]=newLocsDF[,"start"]
-    df2convert[newLocsDF$group_name,"end.hg38"]=newLocsDF[,"end"]
-  } else if (hg38ToHg19) {
-    df2convert = data.frame(df2convert,"start.hg38"=df2convert$GeneStart)
-    df2convert = data.frame(df2convert,"end.hg38"=df2convert$GeneEnd)
-    df2convert[newLocsDF$group_name,"start.hg19"]=newLocsDF[,"start"]
-    df2convert[newLocsDF$group_name,"end.hg19"]=newLocsDF[,"end"]
-  }
-  
-  
-  return(df2convert)
 }
 
 #' Loads R data into variable
@@ -157,3 +150,42 @@ df.factorizer <- function(given.df, col_names.given, mode="factor"){
   }
   return(given.df)
 }
+
+#' Get the length of unique elements in a vector
+#'
+#' @param vect_ Vector of elements
+#'
+#' @export
+#'
+get_length_vect <- function(vect_) { vect_ %>% as.factor() %>% levels() %>% length() }
+
+#' Get the unique elements in a vector
+#'
+#' @param vect_ Vector of elements
+#'
+#' @export
+#'
+get_vect <- function(vect_) { vect_ %>% as.factor() %>% levels() }
+
+#' Get the frequency of elements in a vector
+#'
+#' @param vect_ Vector of elements
+#'
+#' @export
+#'
+get_freq <- function(vect_) { 
+  library(tidyverse)
+  df_ <- vect_ %>% as.factor() %>% table() %>% as.data.frame() 
+  colnames(df_)[1] <- "Category"
+  df_['%'] <- (df_$Freq/sum(df_$Freq))*100
+  print(df_)
+}
+
+
+#' Get rows of dataframe
+#'
+#' @param obj_given Dataframe, matrix or 
+#'
+#' @export
+#'
+get_rows <- function(obj_given) { dim(as.data.frame(obj_given, row.names = NULL))[1] }

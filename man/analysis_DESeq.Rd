@@ -17,11 +17,12 @@ analysis_DESeq(
   early_return = FALSE,
   comp_ID = NULL,
   cutoff.given = 0.9,
-  min_cutoff_to_plot = 3,
-  max_cutoff_to_plot = 50,
   localFit = FALSE,
   forceResults = FALSE,
+  min_cutoff_to_plot = 3,
+  max_cutoff_to_plot = 50,
   gene.annot = NULL,
+  data_type = "mRNA",
   shrinkage.given = "apeglm"
 )
 }
@@ -48,13 +49,13 @@ analysis_DESeq(
 
 \item{cutoff.given}{add an option to include cutoff when removing Zeros}
 
-\item{min_cutoff_to_plot}{Minimun number of genes significant to continue analysis. Default=3}
-
-\item{max_cutoff_to_plot}{Number of genes significant to plot as candidates analysis. Default=50}
-
 \item{localFit}{Use a fitType=local for mean dispersion fit in DESeq2}
 
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
+
+\item{min_cutoff_to_plot}{Minimun number of genes significant to continue analysis. Default=3}
+
+\item{max_cutoff_to_plot}{Number of genes significant to plot as candidates analysis. Default=50}
 
 \item{gene.annot}{Dataframe containing gene annotation (Default: NULL)}
 

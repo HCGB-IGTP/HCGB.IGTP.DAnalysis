@@ -2,7 +2,7 @@
 % Please edit documentation in R/DESeq2_functions.R
 \name{DESeq2_HCGB_function}
 \alias{DESeq2_HCGB_function}
-\title{Plot DESeq2 p-values}
+\title{DESEq2 main function}
 \usage{
 DESeq2_HCGB_function(
   dds_object,
@@ -17,9 +17,10 @@ DESeq2_HCGB_function(
   threads = 2,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
-  gene.annot.df = NULL,
   min_cutoff_to_plot = 3,
   max_cutoff_to_plot = 50,
+  gene.annot.df = NULL,
+  data_type = "mRNA",
   forceResults = FALSE,
   shrinkage = "apeglm"
 )
@@ -49,14 +50,14 @@ DESeq2_HCGB_function(
 
 \item{LFC.given}{Log Fold change cutoff. Default=log2(1.2),}
 
-\item{gene.annot.df}{Dataframe containing gene annotation (Default: NULL)}
-
 \item{min_cutoff_to_plot}{Minimun number of genes significant to continue analysis. Default=3}
 
 \item{max_cutoff_to_plot}{Number of genes significant to plot as candidates analysis. Default=50}
 
+\item{gene.annot.df}{Dataframe containing gene annotation (Default: NULL)}
+
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
 \description{
-This functions plots pvalues original and after filtering
+This functions creates the main analysis given a DDS and comparison to test
 }

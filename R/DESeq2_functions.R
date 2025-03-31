@@ -23,9 +23,9 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
   dev.off()
 }
 
-#' Plot DESeq2 p-values
+#' DESEq2 main function
 #'
-#' This functions plots pvalues original and after filtering
+#' This functions creates the main analysis given a DDS and comparison to test
 #' @param dds_object DESeq2 object
 #' @param coef_n Coefficient number obtain using resultsName(dds)
 #' @param comp_name Name of the comparison

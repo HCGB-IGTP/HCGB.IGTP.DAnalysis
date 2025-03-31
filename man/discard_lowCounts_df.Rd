@@ -9,7 +9,7 @@ discard_lowCounts_df(df_given, min_count = 10)
 \arguments{
 \item{df_given}{Dataframe to pase}
 
-\item{min_count}{Minimum count to use as cutoff \link{Default: 10}.}
+\item{min_count}{Minimum count to use as cutoff (Default: 10).}
 }
 \description{
 This functions discard low counts in a dataframe with any non-numeric column
