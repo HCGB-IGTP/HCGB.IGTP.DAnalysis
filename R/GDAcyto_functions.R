@@ -13,38 +13,6 @@ get_dim.filt <- function(i, filt_length=1e4) {
   return(dim(i.subset)[1] )
 }
 
-#' Create matrix of region overlaps
-#' 
-#' This functions takes a genomicRanges object and using regioneR::numOverlaps creates a matrix of 
-#' overlapping regions
-#'
-#' @param GR.list_given List of Genomic ranges objects per sample
-#'
-#' @return matrix
-#' @export
-#'
-create_matrix_overlaps <- function(GR.list_given) {
-  matrixinp = matrix(data=0, nrow=length(GR.list_given), ncol=length(GR.list_given)) 
-  
-  # fill the elements with j values 
-  # in a matrix 
-  for(j in 1:length(GR.list_given)){ 
-    for(i in 1:length(GR.list_given)){ 
-      #if (i == j) { matrixinp[i,j] = "."} else {
-      #  if (j >= i + 1) { matrixinp[i,j] = "."} else {
-      matrixinp[i,j] = regioneR::numOverlaps(GR.list_given[[i]], GR.list_given[[j]])  
-      #}}
-    } 
-  } 
-  
-  # print(matrixinp) 
-  colnames(matrixinp) <- names(GR.list_given)
-  rownames(matrixinp) <- names(GR.list_given)
-  
-  return(matrixinp)
-}
-
-
 #' Create matrix of region overlaps (by sequence)
 #' 
 #' This functions takes a genomicRanges object and using regioneR::numOverlaps creates a matrix of 
@@ -441,5 +409,88 @@ plotCN_zoom <- function(segment_file, snpInfo.subset.df, sample2process_data,
   ) 
   
   return(plotCN_zoom.list) 
+}
+
+
+#' Create GR list subseting dataframe
+#'
+#' @param data2use 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+GR_list_samples <- function(data2use) {
+  GR_list <- list()
+  for (sample_name in levels(as.factor(data2use[['sample']]))) {
+    print(paste0("+ Subsetting: ", sample_name, "...."))
+    tmp.gr <- GenomicRanges::makeGRangesFromDataFrame(df = subset(data2use,sample==sample_name),  
+                                                      keep.extra.columns = TRUE, na.rm = TRUE)
+    
+    GR_list[[sample_name]] = tmp.gr
+  } 
+  print(" + Done!")
+  print("")
+  return(GR_list)
+}
+
+
+#' Read pennCNV output file
+#'
+#' @param PennCNV_file 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+read_pennCNV <- function(PennCNV_file) {
+  
+  data_pennCNV <- read.table(file = PennCNV_file)
+  names(data_pennCNV) <- c("chr", "start", "end", "state", 
+                           "sample", "snp1", "snp2", "score", "num_snp")
+  
+  ## add new columns
+  data_pennCNV['id'] <- paste0(data_pennCNV$chr, "_", 
+                               data_pennCNV$start, "_",
+                               data_pennCNV$end)
+  data_pennCNV['length'] <- data_pennCNV$end - data_pennCNV$start
+  data_pennCNV['software'] <- "PennCNV"
+  
+  print("head(data_pennCNV)")
+  print(head(data_pennCNV))
+  
+  ## return dataframe and GR list for each sample
+  list_data_pennCNV = list(
+    "df"=data_pennCNV,
+    "GR.list" = GR_list_samples(data2use = data_pennCNV)
+  )
+  
+  
+  return(list_data_pennCNV)
+}
+
+#' Read genoCN output file
+#'
+#' @param genoCN_file 
+#' @export
+read_genoCN <- function(genoCN_file) {
+  
+  genoCN_data <- read.table(file = genoCN_file, header = TRUE)
+  genoCN_data['id'] <- paste0(genoCN_data$chr, "_", genoCN_data$start, "_", genoCN_data$end)
+  genoCN_data['length'] <- genoCN_data$end - genoCN_data$start
+  genoCN_data['software'] <- "genoCN"
+  colnames(genoCN_data)[10] <- 'num_snp'
+  
+  print("head(genoCN_data)")
+  print(head(genoCN_data))
+  
+  ## return dataframe and GR list for each sample
+  list_data_genoCN = list(
+    "df"=genoCN_data,
+    "GR.list" = GR_list_samples(data2use = genoCN_data)
+  )
+  
+  
+  return(list_data_genoCN)
 }
 

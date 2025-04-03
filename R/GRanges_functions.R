@@ -181,4 +181,45 @@ GRanges_subsetter <- function(list_of_GRanges, sub_Granges=NULL, string_given=NU
   return(data2return)
 }
 
+#' Create matrix of region overlaps
+#' 
+#' This functions takes a genomicRanges object and using regioneR::numOverlaps creates a matrix of 
+#' overlapping regions
+#'
+#' @param GR.list_given List of Genomic ranges objects per sample
+#'
+#' @return matrix
+#' @export
+create_matrix_overlaps <- function(GR.list_given, n_cores=4) {
+  
+  matrixinp = matrix(data=0, nrow=length(GR.list_given), ncol=length(GR.list_given)) 
+  
+  for(i in 1:length(GR.list_given)){ 
+    matrixinp[i,] = unlist(
+      create_overlaps(GR.list_given[[i]], 
+                      GR.list_given, 
+                      mc.cores = n_cores))
+  }
+  
+  # print(matrixinp) 
+  colnames(matrixinp) <- names(GR.list_given)
+  rownames(matrixinp) <- names(GR.list_given)
+  
+  return(matrixinp)
+}
+
+#' Create overlaps for a GR vs. list of GRs
+#'
+#' @param GR_given 
+#' @param GR.list_given 
+#' @param mc.cores 
+#'
+#' @export
+create_overlaps <- function(GR_given, GR.list_given, mc.cores=2) { 
+  mclapply(GR.list_given, FUN=regioneR::numOverlaps, B=GR_given, mc.cores = mc.cores)  
+}
+
+
+
+
 

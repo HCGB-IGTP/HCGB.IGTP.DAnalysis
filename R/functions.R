@@ -172,7 +172,6 @@ get_vect <- function(vect_) { vect_ %>% as.factor() %>% levels() }
 #' @param vect_ Vector of elements
 #'
 #' @export
-#'
 get_freq <- function(vect_) { 
   library(tidyverse)
   df_ <- vect_ %>% as.factor() %>% table() %>% as.data.frame() 
@@ -180,6 +179,14 @@ get_freq <- function(vect_) {
   df_['%'] <- (df_$Freq/sum(df_$Freq))*100
   print(df_)
 }
+
+#' Get the not included in
+#'
+#' @param x Vector of elements 1
+#' @param y Vector of elements 2 
+#'
+#' @export
+'%!in%' <- function(x,y)!( '%in%'(x,y) )
 
 
 #' Get rows of dataframe
@@ -189,3 +196,13 @@ get_freq <- function(vect_) {
 #' @export
 #'
 get_rows <- function(obj_given) { dim(as.data.frame(obj_given, row.names = NULL))[1] }
+
+
+
+#' Get cols of dataframe
+#'
+#' @param obj_given Dataframe, matrix or 
+#'
+#' @export
+#'
+get_cols <- function(obj_given) { dim(as.data.frame(obj_given, row.names = NULL))[2] }
