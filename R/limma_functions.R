@@ -48,7 +48,7 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
                                        contrasts.matrix.given = contrasts.matrix.given, 
                                        coef.given = c, OUTPUT_Data_sample = c.dir,
                                        comp_name = comp_name, numerator=numerator, denominator = denominator,
-                                       pCutoff.given=0.05, FCcutoff.given=log2(1.2), 
+                                       pCutoff.given=pCutoff.given, FCcutoff.given=FCcutoff.given, 
                                        forceResults=forceResults, EPIC=EPIC)
     
     results_list[[c]] = results.limma
@@ -94,6 +94,9 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
                               pCutoff.given=0.05, FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE) {
   
   library(EnhancedVolcano)
+  library(RColorBrewer)
+  library(pheatmap)
+  library(openxlsx)
   
   if (forceResults) {
     
@@ -119,7 +122,7 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
   names(alldata.norm.res)[1] <- "Gene"
   
   # filter
-  filt.res <- filter_signficant_limma(alldata.norm.res)
+  filt.res <- filter_signficant_limma(alldata.norm.res, sign_value = pCutoff.given, LFC=FCcutoff.given)
   names(filt.res)[1] <- "Gene"
   rownames(filt.res) <- filt.res$Gene
   filt.res$Gene <- NULL
@@ -183,7 +186,6 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
   if (EPIC) {
     print("No XLSX file generated for EPIC results")
   } else {
-    library(openxlsx)
     
     DE.filename <- file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting.xlsx"))
     sheet_name <- file_name
@@ -199,23 +201,27 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
     
   }
   #--------------------------
-  if (EPIC) {
-    print("No Volcano file generated for EPIC results")
-    plt_volcano <- "No plot available"
-  } else {
     
   #--------------------------
   ## add volcano plot
   #--------------------------
   plt_volcano <- EnhancedVolcano::EnhancedVolcano(all_data.res, 
                                                   x="logFC", y="adj.P.Val", lab="",
-                                                  pCutoff=0.05, FCcutoff=log2(1.2), pointSize=3, labSize=6) + 
+                                                  pCutoff=pCutoff.given, FCcutoff=FCcutoff.given, pointSize=3, labSize=6) + 
     ggplot2::scale_x_continuous() + 
     ggplot2::labs(title = paste0("Comparison for ", name.cmp) )
   
-  HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+  if (EPIC) {
+    #print("No Volcano file generated for EPIC results")
+    HCGB.IGTP.DAnalysis::save_png(folder_path = OUTPUT_Data_sample, 
                                 name_file = paste0(file_name, "_DiffExpression-volcano-plot"), 
                                 plot_given = plt_volcano)
+
+  } else {
+    HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
+                                name_file = paste0(file_name, "_DiffExpression-volcano-plot"), 
+                                plot_given = plt_volcano)
+
   }
   #--------------------------
   
@@ -227,14 +233,18 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
     print(head(filt.res))
     
     ## plot rld
-    data2heatmap = filt.res[,!colnames(filt.res) %in% c("logFC", "AveExpr", "t", "P.Value", "adj.P.Val","B")]
+    data2heatmap = filt.res[,!colnames(filt.res) %in% c("logFC", "AveExpr", "t", "P.Value", "adj.P.Val","B")] %>% na.omit()
+    print(data2heatmap[1:50, 1:10])
+    print(tail(colnames(data2heatmap)))
     
-    plot1 <- pheatmap(head(data2heatmap, 50), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
+    plot1 <- ""    
+    plot1 <- try(pheatmap(head(data2heatmap, 50), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
                       cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                       annotation_col = df_treatment_Ind,
                       color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
                       scale="row" ## centered and scale values per row
-    )
+    ))
+
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
                                   name_file = paste0(file_name, "_top50_DEgenes_Heatmap_allSamples"), plot_given = plot1)
     results_list[['heatmap.all']] = plot1
@@ -247,12 +257,13 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
       ## Only samples included in comparison
       ## plot rld
       data2heatmap2 = data2heatmap[,c(Samplslist$numerator, Samplslist$denominator)]
-      plot2 <- pheatmap(head(data2heatmap2, 50), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
+      plot2 <- ""
+      plot2 <- try(pheatmap(head(data2heatmap2, 50), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
                         cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                         annotation_col = df_treatment_Ind,
                         color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
                         scale="row" ## centered and scale values per row
-      )
+      ))
       HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
                                     name_file = paste0(file_name, "_top50_DEgenes_Heatmap_Samples"), 
                                     plot_given = plot2)

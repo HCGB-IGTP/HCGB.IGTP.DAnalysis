@@ -90,10 +90,11 @@ litfover_func <- function(folderWithLiftoverInfo, data2convert,
 #' @param list_of_GRanges 
 #' @param sub_Granges GRanges to use to subset 
 #' @param string_given String to use to subset 
+#' @param verbose Print comments or not
 #'
 #' @export
 #'
-GRanges_subsetter <- function(list_of_GRanges, sub_Granges=NULL, string_given=NULL) {
+GRanges_subsetter <- function(list_of_GRanges, sub_Granges=NULL, string_given=NULL, verbose=TRUE) {
   
   ## store information as a list for each element of list_of_GRanges
   data2return <- list()
@@ -101,24 +102,28 @@ GRanges_subsetter <- function(list_of_GRanges, sub_Granges=NULL, string_given=NU
   ###################################
   ## check & control if 
   ###################################
-  if (is.null(names(list_of_GRanges))) {
-    # No list provided, a single GRanges
-    print("ERROR: No list of GRanges provided")
-    return()
-  }
-  
-  if (is.null(sub_Granges)) {
-    if (is.null(string_given)) {
-      print("ERROR: No option provided")
+  if (verbose) {
+    
+    if (is.null(names(list_of_GRanges))) {
+      # No list provided, a single GRanges
+      print("ERROR: No list of GRanges provided")
       return()
     }
-    print("Option 2: Use information to filter as a string")
-    print("--------------------------")
-    print(string_given)
-  } else {
-    print("Option 1: Use information saved as a GRanges object")
+    
+    if (is.null(sub_Granges)) {
+      if (is.null(string_given)) {
+        print("ERROR: No option provided")
+        return()
+      }
+      print("Option 2: Use information to filter as a string")
+      print("--------------------------")
+      print(string_given)
+      
+    } else {
+      print("Option 1: Use information saved as a GRanges object")
+    }
   }
-  ###################################
+    ###################################
   
   library(plyranges)
   library(IRanges)
@@ -126,8 +131,10 @@ GRanges_subsetter <- function(list_of_GRanges, sub_Granges=NULL, string_given=NU
   ### use a criteria: seqnames, start & stop or whatever provided as a string
   for (gr_sub in names(list_of_GRanges)) {
     
-    print("Subsetting: ")
-    print(gr_sub)
+    if (verbose) {
+      print("Subsetting: ")
+      print(gr_sub)
+    }
     
     if (is.null(sub_Granges)) {
       
@@ -169,7 +176,10 @@ GRanges_subsetter <- function(list_of_GRanges, sub_Granges=NULL, string_given=NU
   df_dimensions_merge$cols.x <- NULL
   rownames(df_dimensions_merge) <- df_dimensions_merge$Row.names
   df_dimensions_merge$Row.names <- NULL
-  print(df_dimensions_merge)
+  
+  if (verbose) {
+    print(df_dimensions_merge)
+  }
   
   data2return[['dimensions']] = df_dimensions_merge
   

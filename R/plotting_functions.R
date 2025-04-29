@@ -175,12 +175,12 @@ plot.grid.ggscatterBoxplot <- function(list2test, data_all_given, coord.char) {
   for (i in list2test) {
     print(i)
     plot_List[[i]] <- ggboxplot_scatter(data_all_given = data_all_given, 
-                                        colName = i, y.coord = coord.char) 
+                                        colName = coord.char, y.coord = i) 
   }
   n <- length(plot_List)
   nCol <- floor(sqrt(n))
   
-  grid_plot <- arrangeGrob(grobs=plot_List, ncol = nCol)
+  grid_plot <- ggpubr::ggarrange(plotlist=plot_List,common.legend = TRUE)
   
   plots2return <- list(
     "plot_List" = plot_List,
