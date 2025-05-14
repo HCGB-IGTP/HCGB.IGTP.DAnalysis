@@ -21,79 +21,6 @@ create_col_palette <- function(columnGiven, levels_given, palette_given="Paired"
   return(list_colors[colfactors])
 }
 
-#' Save plot in pdf
-#' 
-#' Save a plot in a pdf in the folder provided.
-#' @param folder_path Absolute path to save pdf
-#' @param name_file PDF file name, do not include extension
-#' @param plot_given Plot object
-#' @export
-save_pdf <- function(folder_path, name_file, plot_given) {
-  pdf(file.path(folder_path, paste0(name_file, ".pdf")), paper = "A4r", width = 35, height = 12)
-  print(plot_given)
-  dev.off()
-}
-
-
-#' Save plots in PNG format
-#'
-#' @param folder_path 
-#' @param name_file 
-#' @param plot_given 
-#'
-#' @export
-#'
-save_png <- function(folder_path, name_file, plot_given) {
-  png(file=file.path(folder_path, paste0(name_file, ".png")),
-      width=1200, height=700)
-  print(plot_given)  
-  dev.off()
-  
-}
-
-#' Save plots in JPEG format
-#'
-#' @param folder_path 
-#' @param name_file 
-#' @param plot_given 
-#'
-#' @export
-#'
-save_jpeg <- function(folder_path, name_file, plot_given) {
-  jpeg(filename = file.path(folder_path, paste0(name_file, ".jpeg")),
-       quality = 100,  width=1200, height=700)
-  print(plot_given)  
-  dev.off()
-  
-}
-
-#' Save plots in multiple formats
-#'
-#' @param folder_path 
-#' @param name_file 
-#' @param plot_given 
-#'
-#' @export
-#'
-save_plots_multiformat <- function (folder_path, name_file, plot_given) 
-{
-  print("Save plots in several formats")
-  save_pdf(folder_path, name_file, plot_given = plot_given)
-  save_jpeg(folder_path, name_file, plot_given = plot_given)
-  save_png(folder_path, name_file, plot_given = plot_given)
-}
-
-
-#' Remove NAs in dataframe
-#' 
-#' Filters out dataframe according the amount of NAs allowed
-#' @param DF Dataframe provide
-#' @param n Number of NAs allowed for each row.
-#' @export
-delete_na <- function(DF, n=0) {
-  DF[rowSums(is.na(DF)) <= n,]
-}
-
 #' Loads R data into variable
 #' 
 #' This functions loads a given RData object in a temporal environment and returns it
@@ -188,21 +115,12 @@ get_freq <- function(vect_) {
 #' @export
 '%!in%' <- function(x,y)!( '%in%'(x,y) )
 
-
-#' Get rows of dataframe
+#' Get the last element of a vector
 #'
-#' @param obj_given Dataframe, matrix or 
-#'
-#' @export
-#'
-get_rows <- function(obj_given) { dim(as.data.frame(obj_given, row.names = NULL))[1] }
-
-
-
-#' Get cols of dataframe
-#'
-#' @param obj_given Dataframe, matrix or 
+#' @param x Vector
 #'
 #' @export
-#'
-get_cols <- function(obj_given) { dim(as.data.frame(obj_given, row.names = NULL))[2] }
+last <- function(x) { return( x[length(x)] ) }
+
+
+

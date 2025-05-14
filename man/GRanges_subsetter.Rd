@@ -4,7 +4,12 @@
 \alias{GRanges_subsetter}
 \title{Subset lisf ot GRanges objects}
 \usage{
-GRanges_subsetter(list_of_GRanges, sub_Granges = NULL, string_given = NULL)
+GRanges_subsetter(
+  list_of_GRanges,
+  sub_Granges = NULL,
+  string_given = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{list_of_GRanges}{}
@@ -12,6 +17,8 @@ GRanges_subsetter(list_of_GRanges, sub_Granges = NULL, string_given = NULL)
 \item{sub_Granges}{GRanges to use to subset}
 
 \item{string_given}{String to use to subset}
+
+\item{verbose}{Print comments or not}
 }
 \description{
 Subset lisf ot GRanges objects

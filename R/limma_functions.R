@@ -175,10 +175,13 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
   #--------------------------
   # Write Results tables
   #--------------------------
-  write.table(alldata.norm.res, 
-              file=file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_NormValues-and-DE_table.txt")), 
-              sep="\t", row.names=T, col.names=NA, quote=T)
-  
+  if (EPIC) {
+    print("No saving csv table with all results, just save as RData")
+  } else {
+    write.table(alldata.norm.res, 
+                file=file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_NormValues-and-DE_table.txt")), 
+                sep="\t", row.names=T, col.names=NA, quote=T)
+  }  
   write.table(filt.res, file.path(OUTPUT_Data_sample, paste0(file_name, "-ResultsCounting_table_SignificantDE.txt")), 
               sep="\t", row.names=T, col.names=NA, quote=TRUE)
   

@@ -1,4 +1,4 @@
 
-devtools::build("../")
-devtools::install("../")
+devtools::build("./")
+devtools::install("./")
 

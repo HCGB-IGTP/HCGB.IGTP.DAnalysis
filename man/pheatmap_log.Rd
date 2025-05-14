@@ -2,7 +2,7 @@
 % Please edit documentation in R/GDAcyto_functions.R
 \name{pheatmap_log}
 \alias{pheatmap_log}
-\title{Title}
+\title{Create pheatmap using log values}
 \usage{
 pheatmap_log(matrixinp_given, meta_data_given = NULL)
 }
@@ -12,5 +12,5 @@ pheatmap_log(matrixinp_given, meta_data_given = NULL)
 \item{meta_data_given}{}
 }
 \description{
-Title
+Create pheatmap using log values
 }

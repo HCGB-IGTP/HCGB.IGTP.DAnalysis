@@ -1,59 +1,5 @@
-get_dim <- function(i) { dim(as.data.frame(i, row.names = NULL))[1] }
 
-# length > 10.000 bp
-#' Title
-#'
-#' @param i 
-#' @param filt_length 
-#'
-#' @export
-get_dim.filt <- function(i, filt_length=1e4) { 
-  i.df <- as.data.frame(i)
-  i.subset <- subset(i.df, length > filt_length)
-  return(dim(i.subset)[1] )
-}
-
-#' Create matrix of region overlaps (by sequence)
-#' 
-#' This functions takes a genomicRanges object and using regioneR::numOverlaps creates a matrix of 
-#' overlapping regions by sequence.
-#'
-#' @param GR.list_given List of Genomic ranges objects per sample
-#' @param list_of_chrs List of seq IDs to use, by default chromosomes 1-22.
-#'
-#' @export
-#'
-create_matrix_overlaps_by_seqnames <- function(GR.list_given, list_of_chrs=c(1:22)) {
-  
-  list_of_chrs_matrix <- list()
-  for (chr in list_of_chrs) {
-    matrixinp = matrix(data=0, nrow=length(GR.list_given), ncol=length(GR.list_given)) 
-    
-    # fill the elements with j values 
-    # in a matrix 
-    for(j in 1:length(GR.list_given)){ 
-      for(i in 1:length(GR.list_given)){ 
-        
-        i_GR <- GR.list_given[[i]]
-        j_GR <- GR.list_given[[j]]
-        matrixinp[i,j] = regioneR::numOverlaps(i_GR[seqnames(i_GR)==chr], j_GR[seqnames(j_GR)==chr])  
-      } 
-    } 
-    
-    # print(matrixinp) 
-    colnames(matrixinp) <- names(GR.list_given)
-    rownames(matrixinp) <- names(GR.list_given)
-    
-    matrixinp_df <- as.data.frame(matrixinp)
-    matrixinp_df['chr'] <- chr
-    
-    list_of_chrs_matrix[[ paste0('chr_', chr) ]] <- matrixinp_df
-  } 
-  
-  return(list_of_chrs_matrix)
-}
-
-#' Title
+#' Create pheatmap using log values
 #'
 #' @param matrixinp_given 
 #' @param meta_data_given 
@@ -456,6 +402,12 @@ read_pennCNV <- function(PennCNV_file) {
   data_pennCNV['length'] <- data_pennCNV$end - data_pennCNV$start
   data_pennCNV['software'] <- "PennCNV"
   
+  ## add LOH
+  library(dplyr)
+  data_pennCNV <- data_pennCNV %>% mutate(loh=case_when(state>1 ~ 0,
+                                                        state==1 ~ 1,
+                                                        state==0 ~ 2))
+  
   print("head(data_pennCNV)")
   print(head(data_pennCNV))
   
@@ -481,16 +433,173 @@ read_genoCN <- function(genoCN_file) {
   genoCN_data['software'] <- "genoCN"
   colnames(genoCN_data)[10] <- 'num_snp'
   
+  ## add LOH
+  library(dplyr)
+  genoCN_data <- genoCN_data %>% 
+    mutate(loh=case_when(cn>1 ~ 0,
+                         cn==1 ~ 1, 
+                         cn==0 ~ 2))
+  
   print("head(genoCN_data)")
   print(head(genoCN_data))
   
+  ## we are including regions that lost one alelle and duplicated the other
+  genoCN_data_V = subset(genoCN_data, cn!=2)
+  genoCN_data_nV = subset(genoCN_data, cn==2)
+  
+  
   ## return dataframe and GR list for each sample
   list_data_genoCN = list(
-    "df"=genoCN_data,
-    "GR.list" = GR_list_samples(data2use = genoCN_data)
+    "df"=genoCN_data_V,
+    "GR.list" = GR_list_samples(data2use = genoCN_data_V),
+    "df_nV"=genoCN_data_nV,
+    "GR.list_nV" = GR_list_samples(data2use = genoCN_data_nV)
   )
   
   
   return(list_data_genoCN)
 }
+
+#' Read ASCAT output file
+#'
+#' @param genoCN_file 
+#' @export
+read_ASCAT <- function(ascat_file, list_Granges, list_Granges.ClinVar, verbose=FALSE, test_n=NULL) {
+  
+  ASCAT_data <- read.csv(file = ascat_file, header = TRUE)
+  ASCAT_data$X <- NULL
+  
+  library(dplyr)
+  ASCAT_data$chr <- ASCAT_data$chr %>% stringr::str_remove("chr")
+  
+  ASCAT_data["id"] <- paste0(ASCAT_data$chr, "_", 
+                             ASCAT_data$startpos, "_", ASCAT_data$endpos)
+  ASCAT_data["length"] <- ASCAT_data$endpos - ASCAT_data$startpos
+  ASCAT_data["software"] <- "ASCAT"
+  
+  if (verbose) {
+    print("head(ASCAT_data)")
+    print(head(ASCAT_data))
+    
+    print("tail(ASCAT_data)")
+    print(tail(ASCAT_data))
+  }
+  
+  # calculate LOH segments
+  ASCAT_data["loh"] <- ""
+  
+  ## SNPs info to_be_det
+  ASCAT_data["num_snp"] <- ""
+  ASCAT_data['snp1'] <- ""
+  ASCAT_data['snp2'] <- ""
+  colnames(ASCAT_data)[3] <- "start"
+  colnames(ASCAT_data)[4] <- "end"
+  
+  ##
+  if(!is.null(test_n)) {
+    #ASCAT_data <- ASCAT_data[465:468,]
+    ASCAT_data <- head(ASCAT_data, n=test_n)
+  } 
+  length_items <- rownames(ASCAT_data) %>% get_length_vect()
+  
+  new_ASCAT_data <- list()
+  for (i in c(1:length_items)) {
+    
+    if (verbose) {
+      print("")
+      print("#-------------------------------------------------------#")
+      print(i)
+      print(ASCAT_data[i,])
+    }
+    
+    ## assign default
+    tmp <- try(get_info_GRanges(row_id = i, df = ASCAT_data, tmp.list = list_Granges), silent = TRUE)
+    if (inherits(tmp, 'try-error')) {
+      tmp <- try(get_info_GRanges(row_id = i, df = ASCAT_data, tmp.list = list_Granges.ClinVar, 
+                                  ClinVar = TRUE), silent = TRUE)
+      if (inherits(tmp, 'try-error')) {
+        tmp <- ASCAT_data[i,]
+      }
+    }
+    
+    new_ASCAT_data[[ i ]] <- tmp
+  }
+  
+  ## create_df
+  new_ASCAT_data.df <- new_ASCAT_data %>% do.call(rbind, .)
+  
+  ## filter if any varinace or default
+  new_ASCAT_data.df_nonVariant <- subset(new_ASCAT_data.df, nMajor==1 & nMinor==1)
+  new_ASCAT_data.df_Variant <- new_ASCAT_data.df[rownames(new_ASCAT_data.df) %!in% rownames(new_ASCAT_data.df_nonVariant),]
+  
+  
+  # ASCAT_data <- mclapply(X = c(1:length_items), 
+  #          FUN = get_info_GRanges, 
+  #          df = ASCAT_data, 
+  #          tmp.list=list_Granges, mc.cores = n_cpus) %>% do.call(rbind, .)
+  # 
+  
+  list_data_ASCAT = list(df = new_ASCAT_data.df_Variant,
+                         GR.list = GR_list_samples(data2use = new_ASCAT_data.df_Variant),
+                         df_nV = new_ASCAT_data.df_nonVariant,
+                         GR.list_nV = GR_list_samples(data2use = new_ASCAT_data.df_nonVariant)
+  )
+  
+  return(list_data_ASCAT)
+}
+
+#' Get info for ASCAT 
+#'
+#' @param row_id Rowname id to subset
+#' @param df ASCAT dataframe imported from file
+#' @param tmp.list Temporary list, named tmp, that contains information per probe
+#' @param ClinVar Boolean either if tmp.list is ClinVar or not
+#' @export
+get_info_GRanges <- function(row_id, df, tmp.list, ClinVar=FALSE) {
+  tmp.res <- GRanges_subsetter(
+    list_of_GRanges = tmp.list, 
+    sub_Granges = df[row_id,] %>% GenomicRanges::makeGRangesFromDataFrame(), 
+    verbose=FALSE)
+  
+  if (ClinVar) {
+    df[row_id, 'snp1'] <- tmp.res$tmp[1]$Locus_Name
+    df[row_id, 'snp2'] <- last(tmp.res$tmp)$Locus_Name
+    
+  } else {
+    df[row_id, 'snp1'] <- tmp.res$tmp[1]$Name
+    df[row_id, 'snp2'] <- last(tmp.res$tmp)$Name
+  }
+  
+  df[row_id, 'num_snp'] <- tmp.res$tmp %>% get_rows()
+  df[row_id, 'loh'] <- ASCAT_LOH(nMajor = df[row_id, 'nMajor'], 
+                                 nMinor = df[row_id, 'nMinor'])
+  
+  return(df[row_id,])  
+}
+
+
+
+#' Compute LOH from count of alleles
+#'
+#' @param nMajor Number copies of major allele
+#' @param nMinor Number copies of minor allele
+#'  
+#' @export
+ASCAT_LOH <- function(nMajor, nMinor) {
+  # calculate LOH segments
+  # https://github.com/VanLoo-lab/ascat/issues/29
+  
+  ## because nMajor is set to always be greater or equal to nMinor, 
+  ## regions with nMajor==0 will always also have nMinor at 0 and are homozygous deletions. 
+  ## So, counting regions with nMinor==0 is sufficient, 
+  ## add nMajor!=0 to find bona fide LOH events.
+  
+  loh=0
+  if (nMajor == 0) {loh <- loh + 1 }
+  if (nMinor == 0) {loh <- loh + 1 }
+  
+  ## return
+  loh
+}
+
 

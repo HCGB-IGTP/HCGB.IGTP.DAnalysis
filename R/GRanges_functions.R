@@ -1,4 +1,45 @@
 
+
+#' Create matrix of region overlaps (by sequence)
+#' 
+#' This functions takes a genomicRanges object and using regioneR::numOverlaps creates a matrix of 
+#' overlapping regions by sequence.
+#'
+#' @param GR.list_given List of Genomic ranges objects per sample
+#' @param list_of_chrs List of seq IDs to use, by default chromosomes 1-22.
+#'
+#' @export
+#'
+create_matrix_overlaps_by_seqnames <- function(GR.list_given, list_of_chrs=c(1:22)) {
+  
+  list_of_chrs_matrix <- list()
+  for (chr in list_of_chrs) {
+    matrixinp = matrix(data=0, nrow=length(GR.list_given), ncol=length(GR.list_given)) 
+    
+    # fill the elements with j values 
+    # in a matrix 
+    for(j in 1:length(GR.list_given)){ 
+      for(i in 1:length(GR.list_given)){ 
+        
+        i_GR <- GR.list_given[[i]]
+        j_GR <- GR.list_given[[j]]
+        matrixinp[i,j] = regioneR::numOverlaps(i_GR[seqnames(i_GR)==chr], j_GR[seqnames(j_GR)==chr])  
+      } 
+    } 
+    
+    # print(matrixinp) 
+    colnames(matrixinp) <- names(GR.list_given)
+    rownames(matrixinp) <- names(GR.list_given)
+    
+    matrixinp_df <- as.data.frame(matrixinp)
+    matrixinp_df['chr'] <- chr
+    
+    list_of_chrs_matrix[[ paste0('chr_', chr) ]] <- matrixinp_df
+  } 
+  
+  return(list_of_chrs_matrix)
+}
+
 #' Get dimensions for a GRanges object
 #'
 #' @param granges_given 
@@ -229,7 +270,132 @@ create_overlaps <- function(GR_given, GR.list_given, mc.cores=2) {
   mclapply(GR.list_given, FUN=regioneR::numOverlaps, B=GR_given, mc.cores = mc.cores)  
 }
 
+#' Get percentage of overlaps for two GRs
+#'
+#' Only percentage of BinA will be reported
+#'  
+#' @param A GenomicRanges A
+#' @param B GenomicRanges B
+#' @param verbose TRUE/FALSE for verbosity
+#'
+#' @export
+get_perc_overlap <- function(A, B, verbose=FALSE) {
+  
+  library(regioneR)
+  
+  total_sum <- sum(width(B))
+  overlapped <- regioneR::overlapRegions(A=A, B=B) 
+  overlapped$type %>% get_vect()
+  overlapped['lengthA'] <- overlapped$endA - overlapped$startA
+  overlapped['lengthB'] <- overlapped$endB - overlapped$startB
+  
+  if (verbose) {
+    print(overlapped)  
+  }
+  #sum(subset(overlapped, type=="AinB")$lengthA)/total_sum*100
+  sum(subset(overlapped, type=="BinA")$lengthB)/total_sum*100
+}
 
+#' Get count of region lengths for each GR
+#'  
+#' @param A GenomicRanges A
+#' @param B GenomicRanges B
+#' @param verbose TRUE/FALSE for verbosity
+#'
+#' @export
+stats_GR <- function(given_GR, length2use = c(1e3, 1e4, 1e5, 1e6, 1e7, 1e8),
+                     names2use = c("1kbp", "10kbp", "100kbp", "1Mbp", "10Mbp", "100Mbp")) {
+  
+  
+  list_summary <- as.list(unclass(summary(given_GR$length)), check.names = FALSE)
+  
+  for (i in 1:length(length2use)) {
+    list_summary[[ names2use[i] ]] <- get_dim.filt(i = given_GR, filt_length=length2use[i])
+  }
+  
+  list_summary
+}
+
+#' Get coverage GR or list of GRs
+#'  
+#' Get coverage for all samples vs. all positions
+#'  
+#' @param GR_given
+#'
+#' @export
+get_coverage_GR <- function(GR_given) {
+  
+  library(GenomicRanges)
+  library(plyranges)
+  
+  GRangesList.coord <- GRangesList(GR_given)
+  start(GRangesList.coord)
+  
+  ## get coverage as score
+  rle_acro <- GenomicRanges::coverage(GRangesList.coord)
+  rle_acro.gr <- as_ranges(rle_acro)
+  
+  rle_acro.gr
+}
+
+#' Get frequency length
+#'  
+#' @param GR_given
+#'
+#' @export
+freq_length_GR <- function(given_GR) {
+  
+  length2use = c(1e3, 1e4, 1e5, 1e6, 1e7, 1e8)
+  names2use = c("1kbp", "10kbp", "100kbp", "1Mbp", "10Mbp", "100Mbp")
+  
+  library(DescTools)
+  library(reshape2)
+  df <- DescTools::Freq(given_GR$length, breaks = length2use)
+  df['level'] <- paste0("<", names2use[2:length(names2use)])
+  df['sample'] <- given_GR$sample[1]
+  
+  
+  # cum_bp <- c()
+  # for (i in names2use[2:length(names2use)]) {
+  #  cum_bp <- c(cum_bp, get_sum_bp(given_GR, filt_length = i))
+  # }
+  
+  cum_bp <- c(
+    get_sum_bp(given_GR, min_length = 1e3, max_length = 1e4),
+    get_sum_bp(given_GR, min_length = 1e4, max_length = 1e5),
+    get_sum_bp(given_GR, min_length = 1e5, max_length = 1e6),
+    get_sum_bp(given_GR, min_length = 1e6, max_length = 1e7),
+    get_sum_bp(given_GR, min_length = 1e7, max_length = 1e8)
+  )
+  df['bp'] <- cum_bp
+  
+  df['perc_bp'] <- df$bp/sum(df$bp)
+  df['cum_bp'] <- cumsum(df$perc_bp)
+  
+  return(df)
+}
+
+#' Get length of regions for a list of GRs
+#'  
+#' @param list_GR List of GRs to compute length
+#'
+#' @export
+get_length_list_GRs <- function(list_GR) {
+  total_df <- data.frame()
+  for (i in names(list_GR)) {
+    
+    df <- freq_length_GR(list_GR[[i]])
+    df$cumfreq <- NULL
+    df$cumperc <- NULL
+    df$perc <- NULL
+    df$perc_bp <- NULL
+    df$cum_bp <- NULL
+    
+    total_df <- rbind(total_df, melt(df))
+  }
+  total_df$level <- factor(total_df$level, levels=c("<10kbp", "<100kbp", "<1Mbp", "<10Mbp", "<100Mbp"))
+  total_df
+}
 
 
 
