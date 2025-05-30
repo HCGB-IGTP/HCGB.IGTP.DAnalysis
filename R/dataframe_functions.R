@@ -13,17 +13,18 @@ get_dim.filt <- function(i, filt_length=1e4) {
 
 #' Get categories of gene length regions
 #'
-#' @param df_given Dataframe to use containing a length column
+#' @param df_given Dataframe to use containing a width or length column
 #'
 #' @export
-get_length_cat <- function(df_given) {
+get_length_cat <- function(df_given, col_name="width") {
   
   length2use = c(1e3, 1e4, 1e5, 1e6, 1e7, 1e8)
   names2use = c("1kbp", "10kbp", "100kbp", "1Mbp", "10Mbp", "100Mbp")
   
-  df_given['length_cat'] <- lapply(df_given$length, function(x) {
-    paste(names2use[x > length2use], collapse = "-")
+  df_given['length_cat'] <- lapply( df_given[[ col_name ]], function(x) {
+        paste(names2use[x > length2use], collapse = "-")
   }) %>% unlist()
+  
   
   ## rename categories
   ## [1] ""                             "1kbp"        

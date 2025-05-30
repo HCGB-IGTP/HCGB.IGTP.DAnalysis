@@ -75,3 +75,26 @@ save_multi_pdf <- function(folder_path, name_file, list_plots) {
   }
   dev.off()
 }
+
+#' Save multiple dataframes in XLSX
+#'
+#' @param folder_path File to store results (.xlsx)
+#' @param list_plots List of dataframes to save. Names as tab names.
+#'
+#' @export
+#'
+save_woorkbook_openxlsx <- function(file_path, list_df) {
+  
+  library(openxlsx)
+  ## Create a new workbook and add a worksheet
+  wb <- openxlsx::createWorkbook()
+  
+  for (i in names(list_df)) {
+    openxlsx::addWorksheet(wb = wb, sheetName = i)
+    openxlsx::writeData(wb, sheet = i, x = list_df[[i]], colNames = TRUE, rowNames = TRUE)
+  }
+  
+  ## Save workbook to working directory
+  openxlsx::saveWorkbook(wb, file = file_path, overwrite = TRUE)
+}
+

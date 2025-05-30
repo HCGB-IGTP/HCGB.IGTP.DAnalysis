@@ -4,10 +4,10 @@
 \alias{get_length_cat}
 \title{Get categories of gene length regions}
 \usage{
-get_length_cat(df_given)
+get_length_cat(df_given, col_name = "width")
 }
 \arguments{
-\item{df_given}{Dataframe to use containing a length column}
+\item{df_given}{Dataframe to use containing a width or length column}
 }
 \description{
 Get categories of gene length regions

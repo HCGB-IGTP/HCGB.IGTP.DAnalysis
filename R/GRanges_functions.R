@@ -393,9 +393,68 @@ get_length_list_GRs <- function(list_GR) {
     
     total_df <- rbind(total_df, melt(df))
   }
-  total_df$level <- factor(total_df$level, levels=c("<10kbp", "<100kbp", "<1Mbp", "<10Mbp", "<100Mbp"))
+  total_df$level <- factor(total_df$level, 
+                           levels=c("<10kbp", "<100kbp", "<1Mbp", "<10Mbp", "<100Mbp"))
   total_df
 }
 
+
+#' Create multiple permutation test
+#'  
+#' @param sample_name Name of sample to use
+#' @param GSEA.genes.GR_given GRs of genes to intersect
+#' @param list_GRs_list List of GRs to use
+#' @param ntimes Number of times for regioneR
+#' @param verbose T/F for verbosity
+#'
+#' @export
+create_mult_perm_test <- function(sample_name, GSEA.genes.GR_given, 
+                                  list_GRs_list, ntimes = 1000, verbose=TRUE) {
+  
+  ## loop for the different GRs provided
+  my_vec <- c()
+  my_names <- c()
+  list_GRs_test <- list()
+  
+  for (l in names(list_GRs_list)) {
+    ## GR given vs GSEA genes
+    if (verbose) { print(paste0("+ Testing: ", l, " for sample ",sample_name," vs GSEA genes")) }
+    
+    GR_given =  list_GRs_list[[l]][[sample_name]]
+    
+    GR.permutation_test <- regioneR::permTest(A=GR_given, 
+                                              B=GSEA.genes.GR_given, 
+                                              verbose = verbose,
+                                              randomize.function=randomizeRegions, genome="GRCh38",
+                                              evaluate.function=numOverlaps, 
+                                              ntimes = ntimes,
+                                              force.parallel = TRUE)
+    my_vec <- c(my_vec, GR.permutation_test$numOverlaps$pval, GR.permutation_test$numOverlaps$zscore)
+    list_GRs_test[[l]] = GR.permutation_test
+    my_names <- c(my_names, paste0(l, ".pval"), paste0(l, ".zscore") )
+    
+    if (verbose) {
+      print(my_names)
+      print(my_vec)
+    }
+    
+  }
+  
+  # save stats
+  if (verbose) {
+    print(my_vec) 
+    print("+++++++++++++++++++++++++++++++++") 
+  }
+  
+  list2return <- list(
+    "sample_name" = sample_name,
+    "list_GRs_test" = list_GRs_test,
+    "stats"=my_vec,
+    "names"=my_names
+  )
+  
+  return(list2return)
+  
+}
 
 
