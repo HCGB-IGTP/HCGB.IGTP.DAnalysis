@@ -166,15 +166,16 @@ get_keys.qcs <- function() {
 
 ## QC plots: check background intensity
 check.background <- function(qcs.df.given, mean_oob_grn="mean_oob_grn", 
-                             mean_oob_red="mean_oob_red", Sample_Name="Sample_Name") {
+                             mean_oob_red="mean_oob_red", Sample_Name="Sample_Name", color_cat) {
   
   mean_oob_grn = ensym(mean_oob_grn)
   mean_oob_red = ensym(mean_oob_red)
   Sample_Name = ensym(Sample_Name)
+  color_cat = ensym(color_cat)
   
   # plot mean_oob_grn vs. mean_oob_red
   p <- ggplot(qcs.df.given,
-              aes(x = mean_oob_grn, y= mean_oob_red, label = Sample_Name, color=a)) +
+              aes(x = mean_oob_grn, y= mean_oob_red, label = Sample_Name, color=!!color_cat)) +
     geom_point() + geom_text(hjust = -0.1, vjust = 0.1) +
     geom_abline(intercept = 0, slope = 1, linetype = 'dotted') +
     xlab('Green Background') + ylab('Red Background') +
@@ -184,10 +185,11 @@ check.background <- function(qcs.df.given, mean_oob_grn="mean_oob_grn",
   
 }
 
-check.mean_intensity <- function(qcs.df.given, intensity, y_label){
+check.mean_intensity <- function(qcs.df.given, intensity, y_label, fill_cat){
   intensity <- ensym(intensity)
+  fill_cat <- ensym(fill_cat)
   p <- ggplot(qcs.df.given) +
-    geom_bar(aes(Sample_Name, !!intensity, fill=a), stat='identity') +
+    geom_bar(aes(Sample_Name, !!intensity, fill=!!fill_cat), stat='identity') +
     xlab('Sample Name') + ylab(y_label) +
     ylim(0,18000) + theme_light() 
   
@@ -195,10 +197,11 @@ check.mean_intensity <- function(qcs.df.given, intensity, y_label){
   
 }
 
-check.na_probes <- function(qcs.df.given, na2check, y_label){
+check.na_probes <- function(qcs.df.given, na2check, y_label, fill_cat){
   na2check <- ensym(na2check)
+  fill_cat <- ensym(fill_cat)
   p <- ggplot(qcs.df.given) +
-    geom_bar(aes(Sample_Name, !!na2check, fill=a), stat='identity') +
+    geom_bar(aes(Sample_Name, !!na2check, fill=!!fill_cat), stat='identity') +
     xlab('Sample Name') + ylab(y_label) +
     theme_light() 
   
@@ -294,8 +297,6 @@ create_col_palette2 <- function(columnGiven, palette_given = "Paired") {
 plot_identity.bar <- function(df.given) {
   
   library(reshape2)
-  library(ggnewscale)
-  
   new.data <- df.given[,c("frac_na", "frac_unmeth", "frac_meth")]
   new.data['Sample'] <- row.names(new.data)
   new.data['not_na'] <- 1 - new.data$frac_na  
@@ -318,3 +319,69 @@ plot_identity.bar <- function(df.given) {
 }
 
 
+#' Pvalue mask filtering
+#' 
+#' This function creates an histogram overlaid with kernel density curve
+#' It uses the sesame::pOOBAH function to retrieved the pvalue detection
+#' @param sample_frame SigDF generated
+#' @param sample_name Sample ID
+#' @param sample_dir Folder to store results
+#' @param tag_name Tag to add to the files generated
+pval_maskplot <- function(SigDF_given, sample_name, sample_dir, tag_name="raw_") {
+  ## get results
+  res_pOOBAH <- sesame::pOOBAH(SigDF_given, return.pval = TRUE)
+  
+  pOOBAH_df <- as.data.frame(res_pOOBAH)
+  print(head(pOOBAH_df))
+  
+  ## Histogram overlaid with kernel density curve
+  png(file.path(sample_dir, paste0(tag_name, "histogram_pvalue_filtering.png")))
+  print(ggplot(pOOBAH_df, aes(x=res_pOOBAH)) + 
+          geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                         binwidth=0.001,
+                         colour="black", fill="white") +
+          geom_density(alpha=.2, fill="#FF6666") +  # Overlay with transparent density plot
+          xlim(0,0.1) + geom_vline(xintercept = 0.05) + theme_light())
+  dev.off()
+  
+  # save
+  write.csv(pOOBAH_df, file = file.path(sample_dir, paste0(tag_name, 'pval_filtering_data.csv')))
+}
+
+#' Dye bias exploratory
+#' 
+#' Sesame Dye bias correction by matching green and red to mid point. 
+#' This function compares the Type-I Red probes and Type-I Grn probes and generates 
+#' and mapping to correct signal of the two channels to the middle. 
+#' @param SigDF_given SigDF generated
+#' @param sample_name Sample ID
+#' @param sample_dir Folder to store results
+#' @param tag_name Tag to add to the files generated
+db_exploratory <- function(SigDF_given, sample_name, sample_dir, tag_name="raw_") {
+  
+  # The function takes one single SigDF and returns a SigDF with dye bias corrected.
+  sset.dbNonlinear <- sesame::dyeBiasCorrTypeINorm(SigDF_given)
+  
+  # plot regression
+  sset.dbNonlinear.plotR <- HCGB.IGTP.DAnalysis::ggscatter_plotRegression(
+    data_all_given = as.data.frame(sset.dbNonlinear), x.given = 'UG', 
+    y.given = 'UR', title_string = paste0("Sample: ", sample_name))
+  
+  png(file.path(sample_dir, paste0(tag_name, "dbNonlinear_corr.png")))
+  print(sset.dbNonlinear.plotR$plot)
+  dev.off()
+  
+  ## create qqplot
+  png(file.path(sample_dir, paste0(tag_name, "dbNonlinear_qqplot.png")))
+  print(qqplot(sset.dbNonlinear$UR, sset.dbNonlinear$UG,
+               xlab='Type-I Red Signal', ylab='Type-I Grn Signal',
+               main='Nonlinear Correction', cex=0.5))
+  dev.off()
+  
+  # save
+  save(sset.dbNonlinear, sset.dbNonlinear.plotR, 
+       file = file.path(sample_dir,  paste0(tag_name, 'corr_data.RData')))
+}
+
+
+#######################################

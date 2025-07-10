@@ -517,6 +517,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                             df_treatment_Ind[,list_of_cols],
                             t(sign.data[,rownames(df_treatment_Ind)]))
   print(DE_plots.df)
+  DE_plots = list()
   
   ## print only top50
   for (gene_given in head(rownames(sign.data), n=max_cutoff_to_plot)) {
@@ -543,19 +544,22 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       
     pdf(file.path(boxplot_DE, paste0(gene_name, ".pdf")), paper = "A4r", width = 35, height = 12)
     for (i in colnames(df_treatment_Ind[,list_of_cols])) {
+      DE_plots[gene_name] = list()
       g <- gsub("-", "\\.", g)
       if (is.numeric(df_treatment_Ind[,i])) {
         p2 <- ggscatter_plotRegression(data_all_given = DE_plots.df, 
                                        x.given = g, y.given = i, 
-                                       title_string = i)
+                                       title_string = i)  + 
+          ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
       } else {
-        p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g)   
+        p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g) + 
+          ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
       }
       
       print(p2)
+      DE_plots[[gene_name]][[i]] = p2
     }
     dev.off()
-    
   }
   #--------------------------
   
@@ -582,7 +586,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "sign.genes"=sign.data$Gene,
     "sign.count"=length(sign.data$Gene),
     "shrinkage.LFC"=shrinkage,
-    "DE_plots.df" = DE_plots.df
+    "DE_plots.df" = DE_plots.df,
+    "DE_plots" = DE_plots
   )
   
   ## dump in disk RData
@@ -597,7 +602,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "sign.genes"=sign.data$Gene,
     "sign.count"=length(sign.data$Gene),
     "shrinkage.LFC"=shrinkage,
-    "DE_plots.df"=DE_plots.df
+    "DE_plots.df"=DE_plots.df,
+    "DE_plots" = DE_plots
   )
   ######################################################################
   return(data2return)  

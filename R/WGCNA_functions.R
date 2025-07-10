@@ -1,3 +1,5 @@
+## original code from: ~/proc_data/20231213_EPIC_MAP/code/2.2.epic19_exploratorClinical_analysis.R
+
 wgcna_soft_thresh <- function(input_data.mat, title2include="",
                               start_i=1, end_i=20, iter_steps=1, blockSize.given=30 ) {
   

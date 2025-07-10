@@ -82,7 +82,6 @@ save_multi_pdf <- function(folder_path, name_file, list_plots) {
 #' @param list_plots List of dataframes to save. Names as tab names.
 #'
 #' @export
-#'
 save_woorkbook_openxlsx <- function(file_path, list_df) {
   
   library(openxlsx)
