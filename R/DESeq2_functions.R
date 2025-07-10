@@ -544,7 +544,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       
     pdf(file.path(boxplot_DE, paste0(gene_name, ".pdf")), paper = "A4r", width = 35, height = 12)
     for (i in colnames(df_treatment_Ind[,list_of_cols])) {
-      DE_plots[gene_name] = list()
+      DE_plots[[ gene_name ]] = list()
       g <- gsub("-", "\\.", g)
       if (is.numeric(df_treatment_Ind[,i])) {
         p2 <- ggscatter_plotRegression(data_all_given = DE_plots.df, 
