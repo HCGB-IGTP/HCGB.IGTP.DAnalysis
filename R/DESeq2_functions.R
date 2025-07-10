@@ -533,35 +533,57 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     if (!is.null(gene.annot.df)) {
       gene_annot.df <- gene.annot.df[gene_given,]
       if (data_type=="mRNA") {
+        gene_name_file = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
         gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
+        
       } else if (data_type=="miRNA") {
-        gene_name = paste0(gene_annot.df$parent, "_", gene_given)
+        gene_name = paste0(gene_annot.df$parent, "_", gene_annot.df$variant, "_", gene_given)
+        gene_name_file = paste0(gene_annot.df$parent, "_", gene_given)
       }
-      print(gene_name)
+      print(gene_name_file)
     } else {
       gene_name = g
+      gene_name_file = g
     }
       
-    pdf(file.path(boxplot_DE, paste0(gene_name, ".pdf")), paper = "A4r", width = 35, height = 12)
+    pdf(file.path(boxplot_DE, paste0(gene_name_file, ".pdf")), paper = "A4r", width = 35, height = 12)
     for (i in colnames(df_treatment_Ind[,list_of_cols])) {
-      DE_plots[[ gene_name ]] = list()
-      g <- gsub("-", "\\.", g)
-      print(paste0("Variable: ", i))
-      
-      if (is.numeric(df_treatment_Ind[,i])) {
-        print(paste0("Numeric: ", i))
-        p2 <- ggscatter_plotRegression(data_all_given = DE_plots.df, 
-                                       x.given = g, y.given = i, 
-                                       title_string = i)  + 
-          ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
-      } else {
-        p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g) + 
-          ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
-      }
-      
-      print(p2)
-      DE_plots[[gene_name]][[i]] = p2
-    }
+       DE_plots[[ gene_name_file ]] = list()
+       
+       g <- gsub("-", "\\.", g)
+       print(paste0("Variable: ", i))
+       
+       if (is.numeric(df_treatment_Ind[,i])) {
+         print(paste0("Numeric: ", i))
+         p2.tmp <- ggscatter_plotRegression(data_all_given = DE_plots.df, 
+                                        x.given = g, y.given = i, 
+                                        title_string = i) 
+         
+         p2 <- p2.tmp$plot + ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
+         
+       } else {
+         p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g)
+         
+         ## Only for the varialble of interest add padj calculated by DESeq2
+         if (i == comp_name) {
+           ## get padj from DESeq2
+           stat.test <- tibble::tribble(
+             ~group1, ~group2,   ~p.adj,
+             numerator,     denominator, sign.data[gene_given,'padj']
+           )
+           
+           p2 <- p2 + stat_pvalue_manual(
+             stat.test, 
+             y.position = max(p2$data[,g])*0.85, step.increase = 1, color = "blue",
+             label = "p.adj"
+           )  
+         }
+         p2 <- p2 + ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
+       }
+       
+       print(p2)
+       DE_plots[[gene_name_file]][[i]] = p2
+     }
     dev.off()
   }
   #--------------------------
