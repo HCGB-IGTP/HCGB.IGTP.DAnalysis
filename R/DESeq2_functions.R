@@ -547,8 +547,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     }
       
     pdf(file.path(boxplot_DE, paste0(gene_name_file, ".pdf")), paper = "A4r", width = 35, height = 12)
+    DE_plots[[ gene_name_file ]] = list()
     for (i in colnames(df_treatment_Ind[,list_of_cols])) {
-       DE_plots[[ gene_name_file ]] = list()
        
        g <- gsub("-", "\\.", g)
        print(paste0("Variable: ", i))
@@ -617,6 +617,8 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   
   ## dump in disk RData
   save(data2save, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
+  ## save for better access
+  write.csv(DE_plots.df, file=file.path(OUTPUT_Data_sample, "data4plot_sign_genes.csv"))
   
   data2return <- list(
     "alldata2" = alldata2,
