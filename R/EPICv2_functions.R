@@ -1,4 +1,13 @@
-## given a sesameQC_calcStats qcs objects, create a datframe and return it for all samples available
+#' Dataframe generator from calcStats sesameQC
+#' 
+#' Given a sesameQC_calcStats qcs objects, create a dataframe and return it for all samples available
+#' 
+#' @param qcs.object sesameQC object generated 
+#'
+#' @returns dataframe
+#' @export
+#'
+#' @examples
 getDataF_sesameQC_calcStats <- function(qcs.object) {
   
   library(sesame)
@@ -15,7 +24,13 @@ getDataF_sesameQC_calcStats <- function(qcs.object) {
   return(qcs.df)
 }
 
-## sesame QC step produces many quality stats, here it is a brief description
+#' Get sesameQC keys
+#'
+#' sesame QC step produces many quality stats, here it is a brief description
+#' @returns list
+#' @export
+#'
+#' @examples
 get_keys.qcs <- function() {
   keys.qcs.df <- list(
     
@@ -163,10 +178,24 @@ get_keys.qcs <- function() {
   return(keys.qcs.df)
 }
 
-
-## QC plots: check background intensity
+#' Background intensity plotter
+#'
+#' Create Out-of-bag (OOB) red/green ratio plot from data frame containing values. 
+#' Data frame can be generated from getDataF_sesameQC_calcStats or any other source, 
+#' use appropriate name for columns conveniently 
+#' 
+#' @param qcs.df.given Dataframe from getDataF_sesameQC_calcStats
+#' @param mean_oob_grn Column with mean oob green intensity. Default: mean_oob_grn
+#' @param mean_oob_red Column with mean oob red intensity. Default: mean_oob_red
+#' @param Sample_Name Column with sample ids 
+#' @param color_cat Column to use for coloring samples
+#' @param xlim_vec Axis limits. Default: 100-1000
+#' @param ylim_vec Axis limits. Default: 100-1000
+#' @returns ggplot2 object
+#' @export
 check.background <- function(qcs.df.given, mean_oob_grn="mean_oob_grn", 
-                             mean_oob_red="mean_oob_red", Sample_Name="Sample_Name", color_cat) {
+                             mean_oob_red="mean_oob_red", Sample_Name="Sample_Name", 
+                             xlim_vec = c(100,1000), ylim_vec = c(100,1000), color_cat ) {
   
   mean_oob_grn = ensym(mean_oob_grn)
   mean_oob_red = ensym(mean_oob_red)
@@ -175,33 +204,60 @@ check.background <- function(qcs.df.given, mean_oob_grn="mean_oob_grn",
   
   # plot mean_oob_grn vs. mean_oob_red
   p <- ggplot(qcs.df.given,
-              aes(x = mean_oob_grn, y= mean_oob_red, label = Sample_Name, color=!!color_cat)) +
-    geom_point() + geom_text(hjust = -0.1, vjust = 0.1) +
+              aes(x = mean_oob_grn, y= mean_oob_red, 
+                  label = Sample_Name, color=!!color_cat)) +
+    geom_point() + 
+    geom_text(hjust = -0.1, vjust = 0.1) +
     geom_abline(intercept = 0, slope = 1, linetype = 'dotted') +
     xlab('Green Background') + ylab('Red Background') +
-    xlim(c(100,1000)) + ylim(c(100,1000)) + theme_light()
+    xlim(xlim_vec) + 
+    ylim(ylim_vec) + 
+    theme_light()
   
   return(p)
   
 }
 
-check.mean_intensity <- function(qcs.df.given, intensity, y_label, fill_cat){
+#' Intensity plotter
+#'
+#' @param qcs.df.given Dataframe from getDataF_sesameQC_calcStats
+#' @param intensity Intensity column name in dataframe to plot for each sample
+#' @param y_label Axis Y label sentence
+#' @param fill_cat Column to use for coloring samples
+#' @param Sample_Name Column with sample ids 
+#' 
+#' @returns ggplot2 object
+#' @export
+check.mean_intensity <- function(qcs.df.given, intensity, y_label, fill_cat, Sample_Name="Sample_Name"){
   intensity <- ensym(intensity)
   fill_cat <- ensym(fill_cat)
+  Sample_Name <- ensym(Sample_Name)
+  
   p <- ggplot(qcs.df.given) +
-    geom_bar(aes(Sample_Name, !!intensity, fill=!!fill_cat), stat='identity') +
+    geom_bar(aes(!!Sample_Name, !!intensity, fill=!!fill_cat), stat='identity') +
     xlab('Sample Name') + ylab(y_label) +
-    ylim(0,18000) + theme_light() 
+    theme_light() 
   
   print(p)
-  
 }
 
-check.na_probes <- function(qcs.df.given, na2check, y_label, fill_cat){
+
+#' Missing values NA plotter
+#'
+#' @param qcs.df.given Dataframe from getDataF_sesameQC_calcStats
+#' @param na2check Missing values columns column name in dataframe to plot for each sample: 
+#' @param y_label Axis Y label sentence
+#' @param fill_cat Column to use for coloring samples
+#' @param Sample_Name Column with sample ids 
+#' 
+#' @returns ggplot2 object
+#' @export
+check.na_probes <- function(qcs.df.given, na2check, y_label, fill_cat, Sample_Name="Sample_Name"){
   na2check <- ensym(na2check)
   fill_cat <- ensym(fill_cat)
+  Sample_Name <- ensym(Sample_Name)
   p <- ggplot(qcs.df.given) +
-    geom_bar(aes(Sample_Name, !!na2check, fill=!!fill_cat), stat='identity') +
+    geom_bar(aes(!!Sample_Name, !!na2check, fill=!!fill_cat), stat='identity') +
     xlab('Sample Name') + ylab(y_label) +
     theme_light() 
   
@@ -209,6 +265,14 @@ check.na_probes <- function(qcs.df.given, na2check, y_label, fill_cat){
   
 }
 
+#' Ranking plots per sample
+#'
+#' @param df.given Dataframe from getDataF_sesameQC_calcStats
+#' @param set2plot Name of columns to use. See get_keys.qcs() for options
+#' @param nameSet Name to use for saving PDF plots
+#' @param pdf_file.dir Path to store files
+#'
+#' @export
 create_rank_plots <- function(df.given, set2plot, nameSet, pdf_file.dir) {
   
   library(fmsb)
@@ -227,7 +291,7 @@ create_rank_plots <- function(df.given, set2plot, nameSet, pdf_file.dir) {
                      rep(0,length(colnames(new.df[i,]))), new.df[i,])
     
     ## save in pdf
-    radarchart(new.df2, axistype = 1, 
+    fmsb::radarchart(new.df2, axistype = 1, 
                cglcol = "black", 
                axislabcol = "black", 
                plwd = 2, 
@@ -242,58 +306,11 @@ create_rank_plots <- function(df.given, set2plot, nameSet, pdf_file.dir) {
   
 }
 
-plot_identity.bar_old <- function(df.given, col2check, a.vec) {
-  
-  library(reshape2)
-  library(ggnewscale)
-  
-  new.data <- df.given[,col2check]
-  print(new.data)
-  new.data['Sample'] <- row.names(new.data)
-  print(new.data)
-  
-  new.data.m <- melt(new.data)
-  print(new.data.m)
-  
-  a.vector <- create_col_palette2(columnGiven = a.vec, palette_given = "Dark2")
-  
-  p <- ggplot(data =new.data.m, 
-              mapping = aes(x=Sample, y = value, fill=variable)) + 
-    geom_bar(stat="identity") +
-    theme_light() + 
-    labs(color="") + 
-    guides(color = guide_legend(override.aes = list(alpha = 1, size = 8))) +
-    theme(axis.text.x = element_text(color = a.vector$color.vector, face = 2))
-  
-  
-  print(p)
-}
-
-create_col_palette2 <- function(columnGiven, palette_given = "Paired") {
-  
-  levels_given <- levels(as.factor(columnGiven))
-  library(RColorBrewer)
-  colfactors <- factor(as.factor(columnGiven), levels = levels_given)
-  n_colors <- length(levels(colfactors))
-  if (n_colors < 3) {
-    n_colors = 3
-  }
-  list_colors <- brewer.pal(n = n_colors, palette_given)
-  
-  
-  toReturn <- list(
-    "color.vector" = list_colors[colfactors], 
-    "named.vector" = setNames(levels_given, list_colors[1:length(levels_given)] )
-  )
-  
-  return(toReturn)
-  
-  
-  
-  
-}
-
-
+#' Plot identity bars
+#'
+#' @param df.given Dataframe from getDataF_sesameQC_calcStats
+#'
+#' @export
 plot_identity.bar <- function(df.given) {
   
   library(reshape2)
@@ -307,11 +324,13 @@ plot_identity.bar <- function(df.given) {
   
   print(new.data)
   
-  new.data.m <- melt(new.data[,c("Sample", "frac_meth.real", "frac_unmeth.real", "frac_middle.real", "frac_na")])
+  new.data.m <- melt(new.data[,c("Sample", "frac_meth.real", 
+                                 "frac_unmeth.real", "frac_middle.real", "frac_na")])
   print(new.data.m)
   
   p <- ggplot(data =new.data.m, 
-              mapping = aes(x=Sample, y = value, fill=variable)) + scale_fill_brewer(palette = "Paired") +
+              mapping = aes(x=Sample, y = value, fill=variable)) + 
+    scale_fill_brewer(palette = "Paired") +
     geom_bar(stat="identity") + 
     theme_light() + coord_flip()
   
@@ -364,8 +383,10 @@ db_exploratory <- function(SigDF_given, sample_name, sample_dir, tag_name="raw_"
   
   # plot regression
   sset.dbNonlinear.plotR <- HCGB.IGTP.DAnalysis::ggscatter_plotRegression(
-    data_all_given = as.data.frame(sset.dbNonlinear), x.given = 'UG', 
-    y.given = 'UR', title_string = paste0("Sample: ", sample_name))
+    data_all_given = as.data.frame(sset.dbNonlinear), 
+    x.given = 'UG', 
+    y.given = 'UR', 
+    title_string = paste0("Sample: ", sample_name))
   
   png(file.path(sample_dir, paste0(tag_name, "dbNonlinear_corr.png")))
   print(sset.dbNonlinear.plotR$plot)
@@ -382,6 +403,5 @@ db_exploratory <- function(SigDF_given, sample_name, sample_dir, tag_name="raw_"
   save(sset.dbNonlinear, sset.dbNonlinear.plotR, 
        file = file.path(sample_dir,  paste0(tag_name, 'corr_data.RData')))
 }
-
 
 #######################################
