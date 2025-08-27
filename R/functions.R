@@ -21,6 +21,28 @@ create_col_palette <- function(columnGiven, levels_given, palette_given="Paired"
   return(list_colors[colfactors])
 }
 
+
+create_col_palette2 <- function(columnGiven, palette_given = "Paired") {
+  
+  levels_given <- levels(as.factor(columnGiven))
+  library(RColorBrewer)
+  colfactors <- factor(as.factor(columnGiven), levels = levels_given)
+  n_colors <- length(levels(colfactors))
+  if (n_colors < 3) {
+    n_colors = 3
+  }
+  list_colors <- brewer.pal(n = n_colors, palette_given)
+  
+  toReturn <- list(
+    "color.vector" = list_colors[colfactors], 
+    "named.vector" = setNames(levels_given, list_colors[1:length(levels_given)] )
+  )
+  
+  return(toReturn)
+}
+
+
+
 #' Loads R data into variable
 #' 
 #' This functions loads a given RData object in a temporal environment and returns it

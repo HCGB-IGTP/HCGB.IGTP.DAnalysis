@@ -238,7 +238,7 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
     ## plot rld
     data2heatmap = filt.res[,!colnames(filt.res) %in% c("logFC", "AveExpr", "t", "P.Value", "adj.P.Val","B")] %>% na.omit()
     print(data2heatmap[1:50, 1:10])
-    print(tail(colnames(data2heatmap)))
+    #print(tail(colnames(data2heatmap)))
     
     plot1 <- ""    
     plot1 <- try(pheatmap(head(data2heatmap, 50), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
