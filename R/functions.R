@@ -42,7 +42,6 @@ create_col_palette2 <- function(columnGiven, palette_given = "Paired") {
 }
 
 
-
 #' Loads R data into variable
 #' 
 #' This functions loads a given RData object in a temporal environment and returns it
@@ -145,4 +144,60 @@ get_freq <- function(vect_) {
 last <- function(x) { return( x[length(x)] ) }
 
 
-
+#' Create PCA analysis and plots
+#'
+#' Given a dataframe create PCA and then produce multiple plots using PC1 & PC2 and 
+#' a list of columns to colour samples
+#' 
+#' @param values.df Numerical values to use for the PCA analysis
+#' @param tag_to_use Name to include in the file to save results
+#' @param plots_dir_given Path to store PDF with plots
+#' @param sample_sheet.given Metadata for each sample (as rownames) to colour PCA results
+#' @param col_of_interest List of columns from sample sheet to use 
+#' @param subset_n Number of rows to use from original values.df. Default is to use all
+#'
+#' @export
+create_pcas <- function(values.df, tag_to_use, plots_dir_given, 
+                        sample_sheet.given, col_of_interest, 
+                        subset_n=NULL) {
+  
+  if (is.null(subset_n)) {
+    subtitle_char="All dataset"
+  } else {
+    print("+ Subset original dataframe")
+    values.df <- head(values.df, n=subset_n)
+    subtitle_char=paste0("Dataset has been subsetted. Using top ", as.character(subset_n), " rows")
+  }
+  
+  print("+ Create PCA prcomp")
+  pca_object <- prcomp(na.omit(as.matrix(t(values.df))), scale. = TRUE, center = TRUE)
+  
+  ## explore pca_object object and create plots for each variable
+  print("+ Create PCA plots")
+  
+  library(ggfortify)
+  
+  list_of_plots <- list()
+  for (i in col_of_interest) {
+    list_of_plots[[i]] <- autoplot(pca_object, 
+                                   data=sample_sheet.given, colour = i, size=5) + 
+      ggrepel::geom_text_repel(label=rownames(sample_sheet.given)) + 
+      theme_classic() + 
+      ggtitle(label = paste0("Variable: ", i), subtitle = subtitle_char)
+  }
+  
+  ## save as pdf
+  print("+ Saving as PDFs")
+  HCGB.IGTP.DAnalysis::save_multi_pdf(folder_path = plots_dir_given, 
+                                      name_file = paste0(tag_to_use, "_pca"), 
+                                      list_plots = list_of_plots)
+ 
+  ## add other information to return
+  library(factoextra)
+  scree_plot <- fviz_eig(pca_object, addlabels = TRUE)
+  
+  list_of_plots['pca_object'] = pca_object
+  list_of_plots['scree_plot'] = scree_plot
+  
+  list_of_plots
+}
