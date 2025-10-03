@@ -60,6 +60,9 @@ get_topGO_data <- function(list_genes, list_all_genes, gene2GO, ont_given="B", n
 #' @export
 get_GSEA_datasets <- function(species_given="Homo sapiens"){
   
+  
+  ## TODO: Change category argument to collection?
+  
   library(msigdbr)
   
   ## ATTENTION: no specific gene set Hallmark for Mus musculus although stated in the example from CRAN
@@ -177,16 +180,27 @@ get_GSEA_datasets <- function(species_given="Homo sapiens"){
 #' @param table_data Dataframe containing information
 #' @param option_given Column name to retrieve data.
 #' @export
-rank_list_by <- function(table_data, option_given="logFC", GENE_SYMBOL.col="GENE_SYMBOL") {
+rank_list_by <- function(table_data, option_given="logFC", GENE_SYMBOL.col="hgnc_symbol") {
   
+  print("+ Original dimensions")
   print(dim(table_data))
-  table_data <-subset(table_data, !GENE_SYMBOL.col=="")
-  print(table_data)
-  print(dim(table_data))
+  all_Gene.list <- table_data[[GENE_SYMBOL.col]]
+  print("+ Length of Gene ids")
+  print(length(all_Gene.list))
   
-  gene_list <- table_data[[option_given]]
+  print("+ Remove empty and Duplicated ids")
+  dup.list.genes <- unique(all_Gene.list[duplicated(all_Gene.list)])
   
-  names(gene_list) = table_data[[GENE_SYMBOL.col]]
+  print("+ Remove duplicated. Length of Gene ids")
+  table_data2 <- table_data[table_data[[GENE_SYMBOL.col]] %!in% dup.list.genes,]
+  
+  #print(table_data)
+  print("+ Clean dataframe dimensions")
+  print(dim(table_data2))
+  
+  gene_list <- table_data2[[option_given]]
+  
+  names(gene_list) = table_data2[[GENE_SYMBOL.col]]
   gene_list <- gene_list[order(gene_list)]
   
   return(gene_list)
@@ -491,29 +505,35 @@ enricher_loop <- function (list_of_sets, geneUniverse, GO_folder, tag2use,
         
       } else {
         print("enrichGO analysis")
-        res <- clusterProfiler::enrichGO(gene = list_of_sets[[set2test]], 
-                                         universe = geneUniverse,
-                                         OrgDb = org.Db2use, 
-                                         keyType = keyType.given, 
-                                         ont = ont_T)
-        
-        
-        print("save results")
-        dat <- head(res, n = 100)
-        p <- ""
-        if (dim(dat)[1]>1) {
-          p <- enrichplot::dotplot(res)
-          save_pdf(p, folder_path = GO_folder, 
-                   name_file = paste0(tag2use, "_", name2use)  )
-        }
-        # save results
-        write.csv(dat, file=file.path(GO_folder, paste0(tag2use, "_", name2use, ".csv")))
-        
-        addWorksheet(wb, name2use)
-        writeData(wb, name2use, dat,
-                  startRow = 2, startCol=2,rowNames = FALSE,
-                  keepNA=TRUE,na.string="NA")
-        
+          res <- clusterProfiler::enrichGO(gene = list_of_sets[[set2test]], 
+                                           universe = geneUniverse,
+                                           OrgDb = org.Db2use, 
+                                           keyType = keyType.given, 
+                                           ont = ont_T)
+          
+          if (class(res)=="NULL") {
+            print("enrichGO analysis: not possible")
+            res <- ""
+            p <- ""
+            dat <- ""
+            
+          } else {
+            print("save results")
+            dat <- head(res, n = 100)
+            p <- ""
+            if (dim(dat)[1]>1) {
+              p <- enrichplot::dotplot(res)
+              save_pdf(p, folder_path = GO_folder, 
+                       name_file = paste0(tag2use, "_", name2use)  )
+            }
+            # save results
+            write.csv(dat, file=file.path(GO_folder, paste0(tag2use, "_", name2use, ".csv")))
+            
+            addWorksheet(wb, name2use)
+            writeData(wb, name2use, dat,
+                      startRow = 2, startCol=2,rowNames = FALSE,
+                      keepNA=TRUE,na.string="NA")
+          }
       }
       
       #
@@ -566,4 +586,65 @@ gprofiler_analysis <- function(genes_of_interest, dir2save,
   
   plot_interactive
 }
+
+#' Create functional analysis
+#'
+#' @param alldata DE dataframe
+#' @param dir_given Output dir to store results
+#' @param tag_name Name to use
+#' @param GSEA.datasets List of datasets from GSEA msigdb
+#' @param sign.genes List of significant genes
+#' @param nproc_given Number of threads to use
+#' @param GENE_SYMBOL.col Gene column name to use: Default: hgnc_symbol
+#' @param ranker.list For gsea, rank by column Default: c('log2FoldChange', 'signed.logPval')
+#'
+#' @export
+functional_analysis <- function(alldata, dir_given, tag_name, GSEA.datasets, sign.genes, nproc_given=12,
+                                GENE_SYMBOL.col = "hgnc_symbol", ranker.list = c('log2FoldChange', 'signed.logPval')) {
+  
+  library(fgsea)
+  library(gprofiler2)
+  library(clusterProfiler)
+  library(enrichplot)
+  library(openxlsx)
+  
+  
+  results_gsea <- FGSEA_GSEA_loop(table_annot = alldata,
+                                  folder_out = file.path(dir_given, "gsea"),
+                                  GENE_SYMBOL.col = GENE_SYMBOL.col,
+                                  name_given = tag_name,
+                                  nproc_given = nproc_given,
+                                  ranker.list = ranker.list,
+                                  dataSet.list=GSEA.datasets,
+                                  padj.thres = 0.25, create.signed.logPval = TRUE)
+  
+  GO_dir <- file.path(dir_given, "GO_enrichment")
+  dir.create(GO_dir)
+  
+  genes2use.vec <- rank_list_by(alldata, GENE_SYMBOL.col = "hgnc_symbol", option_given = "log2FoldChange")
+  genes2use <- names(genes2use.vec)
+  
+  results_GO <- enricher_loop(
+    list_of_sets = list("list_genes" = sign.genes),
+    geneUniverse = genes2use,
+    GO_folder = GO_dir,
+    tag2use = tag_name)
+  
+  save(results_GO, file = file.path(GO_dir, "results_GO.RData"))
+  
+  gprofiler_dir <- file.path(dir_given, "gprofiler")
+  dir.create(gprofiler_dir)
+  gprofiler_result <- gprofiler_analysis(genes_of_interest = sign.genes, 
+                                         dir2save = gprofiler_dir, 
+                                         name2use = tag_name, 
+                                         significant_ = TRUE, 
+                                         organism2use = "hsapiens")
+  
+  return(gprofiler_result)
+  
+  return(list("gsea"=results_gsea, 
+              "go"=results_GO,
+              "gprofiler"=gprofiler_result))
+}
+
 

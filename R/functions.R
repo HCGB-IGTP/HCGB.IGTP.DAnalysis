@@ -186,18 +186,34 @@ create_pcas <- function(values.df, tag_to_use, plots_dir_given,
       ggtitle(label = paste0("Variable: ", i), subtitle = subtitle_char)
   }
   
+  ## add other information to return
+  library(factoextra)
+  scree_plot <- fviz_eig(pca_object, addlabels = TRUE)
+  list_of_plots[['scree_plot']] = scree_plot
+  
   ## save as pdf
   print("+ Saving as PDFs")
   HCGB.IGTP.DAnalysis::save_multi_pdf(folder_path = plots_dir_given, 
                                       name_file = paste0(tag_to_use, "_pca"), 
                                       list_plots = list_of_plots)
  
-  ## add other information to return
-  library(factoextra)
-  scree_plot <- fviz_eig(pca_object, addlabels = TRUE)
-  
-  list_of_plots['pca_object'] = pca_object
-  list_of_plots['scree_plot'] = scree_plot
+  ## add object for later if necessary
+  list_of_plots[['pca_object']] = pca_object
   
   list_of_plots
 }
+
+
+
+#' Get all possible combinations for the levels provided
+#'
+#' @param vec.given Vector provided
+#'
+#' @export
+get_possible_comparisons <- function(vec.given) {
+  comb_m <- combn(levels(factor(vec.given)), 
+                  m = 2, simplify = TRUE)
+  my_comp <- lapply(seq_len(ncol(comb_m)), function(i) comb_m[, i])
+  my_comp
+}
+

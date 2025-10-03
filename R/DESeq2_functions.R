@@ -1492,4 +1492,119 @@ check_rank_design <- function(formula2test, data.df) {
   print(which(col.res))
 }
 
+#' Create DE gene plots for several metadata variables
+#'
+#' @param outdir_path Output dirname
+#' @param metadata_given Samplesheet dataframe
+#' @param list_of_cols Columns to use for plotting genes
+#' @param sign.data Signficant dataframe to use
+#' @param comp_name Comparison of interest
+#' @param numerator Group 1, used as numerator
+#' @param denominator Group 2, used as denominator or reference in the comparison
+#' @param gene.annot.df Dataframe with annotation, either for miRNA or mRNA containing parent and variant or hgnc_symbol, respectively. Default: NULL
+#' @param max_cutoff_to_plot Maximun number of genes to plot. Default: 50
+#' @param data_type Either mRNA or miRNA. Default: mRNA
+#' @param outdir_name Name of the folder to create. Default: boxplot_DE
+#'
+#' @export
+create_DE_plots <- function(outdir_path, metadata_given, list_of_cols, sign.data, 
+                            comp_name, numerator, denominator,
+                            gene.annot.df=NULL, max_cutoff_to_plot=50, data_type="mRNA", outdir_name="boxplot_DE", n_cores=2) {
+  
+  print("+ Create dir")
+  boxplot_DE <- file.path(outdir_path, outdir_name)
+  dir.create(boxplot_DE)
+  print(boxplot_DE)
+  
+  ## create dataframe to plot
+  print("+ Create dataframe to plot")
+  
+  samples_here <- rownames(metadata_given)[rownames(metadata_given) %in% colnames(sign.data)]
+  
+  DE_plots.df <- data.frame(row.names = samples_here, 
+                            metadata_given[samples_here, list_of_cols], t(sign.data[, samples_here]))
+  print(head(DE_plots.df))
+  
+  ##
+  print("+ Iterate for each gene and create plots")
+  DE_plots = list()
+  
+  library(doParallel)
+  # Register cluster
+  cluster <- makeCluster(n_cores)
+  registerDoParallel(cluster)
+  
+  results <- foreach(gene_n = 1:max_cutoff_to_plot) %dopar% {
+    gene_given = rownames(sign.data)[gene_n]
+    g <- gsub("-", "\\.", gene_given)
+    g <- gsub("&", "\\.", g)
+    g <- gsub(":", "\\.", g)
+    g <- gsub("\\+", "\\.", g)
+    print(g)
+    
+    ## If annotation provided, add description and subtitle
+    if (!is.null(gene.annot.df)) {
+      gene_annot.df <- gene.annot.df[gene_given, ]
+      if (data_type == "mRNA") {
+        gene_name_file = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
+        gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
+      }
+      else if (data_type == "miRNA") {
+        gene_name = paste0(gene_annot.df$parent, "_", 
+                           gene_annot.df$variant, "_", gene_given)
+        gene_name_file = paste0(gene_annot.df$parent, 
+                                "_", gene_given)
+      }
+      ##
+      print(paste0("Annotation added: ", gene_name_file))
+    }
+    else {
+      gene_name = g
+      gene_name_file = g
+    }
+    
+    DE_plots[[gene_name_file]] = list()
+    for (i in colnames(metadata_given[, list_of_cols])) {
+      g <- gsub("-", "\\.", g)
+      print(paste0("Variable: ", i))
+      if (is.numeric(metadata_given[, i])) {
+        print(paste0("Numeric: ", i))
+        p2.tmp <- HCGB.IGTP.DAnalysis::ggscatter_plotRegression(data_all_given = DE_plots.df, 
+                                                                x.given = g, y.given = i, title_string = i)
+        p2 <- p2.tmp$plot + ggtitle(paste0("Variable: ", i), subtitle = gene_name)
+      }
+      else {
+        p2 <- HCGB.IGTP.DAnalysis::ggboxplot_scatter(data_all_given = DE_plots.df, 
+                                                     colName = i, y.coord = g)
+        if (i == comp_name) {
+          ## If the plot is for the comparison of interest, 
+          ## add in blue the pvalue adjusted obtained by DESeq2
+          stat.test <- tibble::tribble(~group1, ~group2, 
+                                       ~p.adj, numerator, denominator,
+                                       sign.data[gene_given, "padj"])
+          p2 <- p2 + stat_pvalue_manual(stat.test, 
+                                        y.position = max(p2$data[,g]) * 0.85, 
+                                        step.increase = 1, color = "blue", 
+                                        label = "p.adj")
+          
+          p2 <- p2 + labs(title = paste0("Variable: ", i),
+                          subtitle = gene_name,
+                          caption = "[**In blue, pvalue adjusted by DESeq2]")
+          
+        } else {
+          p2 <- p2 + ggtitle(paste0("Variable: ", i), subtitle = gene_name)  
+        }
+        
+      }
+      print(p2)
+      DE_plots[[gene_name_file]][[i]] = p2
+    }
+    
+    HCGB.IGTP.DAnalysis::save_multi_pdf(folder_path = boxplot_DE, name_file = gene_name_file, list_plots = DE_plots[[gene_name_file]])
+  }
+  
+  # Don't fotget to stop the cluster
+  stopCluster(cl = cluster)
+}
+
 

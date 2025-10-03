@@ -362,10 +362,7 @@ plotCN_zoom <- function(segment_file, snpInfo.subset.df, sample2process_data,
 #'
 #' @param data2use 
 #'
-#' @return
 #' @export
-#'
-#' @examples
 GR_list_samples <- function(data2use) {
   GR_list <- list()
   for (sample_name in levels(as.factor(data2use[['sample']]))) {
@@ -385,10 +382,7 @@ GR_list_samples <- function(data2use) {
 #'
 #' @param PennCNV_file 
 #'
-#' @return
 #' @export
-#'
-#' @examples
 read_pennCNV <- function(PennCNV_file) {
   
   data_pennCNV <- read.table(file = PennCNV_file)

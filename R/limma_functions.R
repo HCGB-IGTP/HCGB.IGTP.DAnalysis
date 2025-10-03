@@ -16,7 +16,7 @@
 get_limma_results <- function(normData, df_treatment_Ind, design.given, contrasts.matrix.given, 
                               coef.given.list, OUTPUT_Data_sample,
                               comp_name,  pCutoff.given=0.05, 
-                              FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE) {
+                              FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE, paired_variable=NULL) {
   
   
   # model.matrix: 
@@ -27,7 +27,17 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
   # topTable: show statistical results
   # contrasts.fit: make all-pairwise comparisons between the gruoups
   
-  fit_1 <- limma::lmFit(normData, design.given)
+  corfit <- ""
+  if (is.null(paired_variable)) {
+    fit_1 <- limma::lmFit(normData, design.given)
+    
+  } else {
+    
+    ## estimate correlation between variables on the same subject
+    corfit <- duplicateCorrelation(normData, design.given, block=paired_variable)
+    fit_1 <- limma::lmFit(normData, design.given, block = paired_variable, correlation = corfit$consensus)  
+  }
+  
   fit_2 <- limma::contrasts.fit(fit_1, contrasts.matrix.given)
   efit_3 <- limma::eBayes(fit_2, trend=TRUE)        # empirical Bayes adjustment
   results_fit <- decideTests(efit_3)
@@ -47,8 +57,11 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
                                        df_treatment_Ind = df_treatment_Ind, design.given = design.given, 
                                        contrasts.matrix.given = contrasts.matrix.given, 
                                        coef.given = c, OUTPUT_Data_sample = c.dir,
-                                       comp_name = comp_name, numerator=numerator, denominator = denominator,
-                                       pCutoff.given=pCutoff.given, FCcutoff.given=FCcutoff.given, 
+                                       comp_name = comp_name, 
+                                       numerator=numerator, 
+                                       denominator = denominator,
+                                       pCutoff.given=pCutoff.given, 
+                                       FCcutoff.given=FCcutoff.given, 
                                        forceResults=forceResults, EPIC=EPIC)
     
     results_list[[c]] = results.limma
@@ -65,6 +78,10 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
     "contrasts.matrix" = contrasts.matrix.given,
     "coef.given" = coef.given.list
   )
+  
+  if (!is.null(paired_variable)) {
+    results2return[['corrfit']] = corfit 
+  }
   
   return(results2return)
 }
@@ -324,5 +341,30 @@ filter_signficant_limma <- function(dataF, sign_value = 0.05, LFC=0.26) {
   return(dataFilt)
 }
 
+
+#' Make all pairwise contrast for limma
+#' 
+#' Original: https://bioinformatics.stackexchange.com/questions/18570/generating-contrast-matrix-for-limma-in-loop
+#'
+#' @param group Vector of names to use 
+#' @param delim Character to use for delimiting: "_vs_" as default
+#'
+#' @export
+make_all_contrasts <- function (group, delim="_vs_"){
+  
+  suppressMessages(require(limma))
+  
+  #/ ensure that group levels are unique
+  group <- sort(unique(as.character(group)))
+  
+  #/ make all combinations
+  cb   <- combn(group, 2, FUN = function(x){paste0(x[1], "-", x[2])})
+  
+  #/ make contrasts
+  contrasts<- limma::makeContrasts(contrasts=cb, levels=group)
+  colnames(contrasts) <- gsub("-", delim, colnames(contrasts))
+  
+  return(contrasts)
+}
 
 

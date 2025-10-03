@@ -1,6 +1,6 @@
 Package: HCGB.IGTP.DAnalysis
 Title: Useful in-house functions for multiple analysis
-Version: 0.5
+Version: 0.6
 Authors@R: 
     person(given = "Jose Francisco",
            family = "Sanchez-Herrero",
@@ -11,7 +11,7 @@ License: use_gpl3_license()
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2.9000
+RoxygenNote: 7.3.3.9000
 Imports:
   BiocParallel,
   biomaRt,

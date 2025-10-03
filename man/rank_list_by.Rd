@@ -7,7 +7,7 @@
 rank_list_by(
   table_data,
   option_given = "logFC",
-  GENE_SYMBOL.col = "GENE_SYMBOL"
+  GENE_SYMBOL.col = "hgnc_symbol"
 )
 }
 \arguments{

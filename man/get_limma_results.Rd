@@ -15,7 +15,8 @@ get_limma_results(
   pCutoff.given = 0.05,
   FCcutoff.given = log2(1.2),
   forceResults = FALSE,
-  EPIC = FALSE
+  EPIC = FALSE,
+  paired_variable = NULL
 )
 }
 \arguments{

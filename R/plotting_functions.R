@@ -93,8 +93,7 @@ ggscatter_plotRegression <- function(data_all_given, x.given, y.given, title_str
   
   p <- ggscatter(fit_model$model, y.given, x.given, add='reg.line', 
                  conf.int = TRUE, cor.coef = TRUE,  palette="jco", color = color4points, 
-                 alpha = 0.6, ggtheme = theme_bw(), xlab = y.given) + 
-    stat_cor(label.x.npc = "middle")
+                 alpha = 0.6, ggtheme = theme_bw(), xlab = y.given)
   
   # return plot
   
