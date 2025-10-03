@@ -599,13 +599,13 @@ call_limma_comparisons <- function(sample_metadata.given, var_name,  dir_folder.
     ## call limma for each comparison generated
     ##---------------------------------
     
-    res.limma <- try(get_limma_EPIC_results(normData.given = values_df[,rownames(test.df)]),
+    res.limma <- try(get_limma_EPIC_results(normData.given = values_df[,rownames(test.df)],
         sample_sheet.given = test.df,
         design.given = design.cmp,
         comp.name.given = var_name, 
         contrasts.matrix.here = contrasts.matrix.cmp,
         folder_given = my_dir, 
-        illumina_annot = EPICannotation.given, b_values_given = bvalues)
+        illumina_annot = EPICannotation.given, b_values_given = bvalues))
 
     if (is.null(res.limma)) {
       
