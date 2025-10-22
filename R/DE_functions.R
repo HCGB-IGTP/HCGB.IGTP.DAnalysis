@@ -231,7 +231,7 @@ create_DE_plots <- function(outdir_path, metadata_given, list_of_cols, sign.data
 #' @param LFC Log Fold Change cutoff: Default: 0.26
 #' @param input_type Choose either DESeq2 or limma to identify the format of the results.
 #' @export
-filter_signficant_hits <- function(dataF, sign_value = 0.05, LFC=0.26, input_type="DESeq2") {
+filter_significant_hits <- function(dataF, sign_value = 0.05, LFC=0.26, input_type="DESeq2") {
   
   if (input_type=="DESeq2") {
     #log2FoldChange
@@ -242,11 +242,10 @@ filter_signficant_hits <- function(dataF, sign_value = 0.05, LFC=0.26, input_typ
   } else if (input_type=="limma") {
     #log2FoldChange
     #padj
-    dataFilt <- subset(dataF, abs(log2FoldChange)>LFC & padj<sign_value)
-    dataFilt <- dataFilt[order(dataFilt$padj),]
+    dataFilt <- subset(dataF, abs(logFC)>LFC & adj.P.Val<sign_value)
+    dataFilt <- dataFilt[order(dataFilt$adj.P.Val),]
   }
 
-  
   return(dataFilt)
 }
 
@@ -407,6 +406,31 @@ check_rank_design <- function(formula2test, data.df) {
   print("")
   print("which(col.res)")
   print(which(col.res))
+}
+
+#' Make all pairwise contrast for limma
+#' 
+#' Original: https://bioinformatics.stackexchange.com/questions/18570/generating-contrast-matrix-for-limma-in-loop
+#'
+#' @param group Vector of names to use 
+#' @param delim Character to use for delimiting: "_vs_" as default
+#'
+#' @export
+make_all_contrasts <- function (group, delim="_vs_", decreasing = TRUE){
+  
+  suppressMessages(require(limma))
+  
+  #/ ensure that group levels are unique
+  group <- sort(unique(as.character(group)), decreasing=decreasing)
+  
+  #/ make all combinations
+  cb   <- combn(group, 2, FUN = function(x){paste0(x[1], "-", x[2])})
+  
+  #/ make contrasts
+  contrasts<- limma::makeContrasts(contrasts=cb, levels=group)
+  colnames(contrasts) <- gsub("-", delim, colnames(contrasts))
+  
+  return(contrasts)
 }
 
 

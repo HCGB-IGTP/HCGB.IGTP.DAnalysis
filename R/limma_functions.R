@@ -147,7 +147,7 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
   names(alldata.norm.res)[1] <- "Gene"
   
   # filter
-  filt.res <- filter_signficant_limma(alldata.norm.res, sign_value = pCutoff.given, LFC=FCcutoff.given)
+  filt.res <- filter_signficant_hits(dataF = alldata.norm.res, sign_value = pCutoff.given, LFC=FCcutoff.given, input_type = "limma")
   names(filt.res)[1] <- "Gene"
   rownames(filt.res) <- filt.res$Gene
   filt.res$Gene <- NULL
@@ -335,44 +335,5 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
   return(results_list)
 }
 
-#' Filter limma DE analysis 
-#'
-#' This functions filters limma DE results
-#' @param normData results limma dataframe to use as normalized values 
-#' @param sign_value Pvalue adjusted cutoff: Default=0.05
-#' @param LFC Log Fold Change cutoff: Default: 0.26
-#' @export
-filter_signficant_limma <- function(dataF, sign_value = 0.05, LFC=0.26) {
-  ## limma
-  dataFilt <- subset(dataF, abs(logFC)>LFC & adj.P.Val<sign_value)
-  dataFilt <- dataFilt[order(dataFilt$adj.P.Val),]
-  return(dataFilt)
-}
-
-
-#' Make all pairwise contrast for limma
-#' 
-#' Original: https://bioinformatics.stackexchange.com/questions/18570/generating-contrast-matrix-for-limma-in-loop
-#'
-#' @param group Vector of names to use 
-#' @param delim Character to use for delimiting: "_vs_" as default
-#'
-#' @export
-make_all_contrasts <- function (group, delim="_vs_", decreasing = TRUE){
-  
-  suppressMessages(require(limma))
-  
-  #/ ensure that group levels are unique
-  group <- sort(unique(as.character(group)), decreasing=decreasing)
-  
-  #/ make all combinations
-  cb   <- combn(group, 2, FUN = function(x){paste0(x[1], "-", x[2])})
-  
-  #/ make contrasts
-  contrasts<- limma::makeContrasts(contrasts=cb, levels=group)
-  colnames(contrasts) <- gsub("-", delim, colnames(contrasts))
-  
-  return(contrasts)
-}
 
 
