@@ -16,7 +16,8 @@ get_limma_results(
   FCcutoff.given = log2(1.2),
   forceResults = FALSE,
   EPIC = FALSE,
-  paired_variable = NULL
+  paired_variable = NULL,
+  covariates.Data = NULL
 )
 }
 \arguments{
@@ -41,6 +42,8 @@ get_limma_results(
 \item{forceResults}{Set flag to force results if previously generated. Default=FALSE}
 
 \item{EPIC}{Boolean to indicate EPIC probes, avoid generating huge xlsx file. Default=FALSE}
+
+\item{paired_variable}{Use this variable as a paired variable for the differential analysis}
 }
 \description{
 This functions creates limma DE analysis

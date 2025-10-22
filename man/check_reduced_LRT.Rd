@@ -14,9 +14,12 @@ check_reduced_LRT(
   int_threads = 2,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
+  min_cutoff_to_plot = 3,
+  max_cutoff_to_plot = 50,
   gene.annot = NULL,
   forceResults = FALSE,
-  shrinkage.given = "apeglm"
+  shrinkage.given = "apeglm",
+  data_type = "mRNA"
 )
 }
 \arguments{
@@ -33,6 +36,8 @@ check_reduced_LRT(
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 
 \item{shrinkage.given}{LFC shrinkage estimator provided. Available: apeglm, ashr or normal}
+
+\item{data_type}{Either mRNA, miRNA or rRNA_16S. Default: mRNA}
 }
 \description{
 Check reducing effect using LRT method.

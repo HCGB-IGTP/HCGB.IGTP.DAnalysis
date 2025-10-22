@@ -12,11 +12,12 @@
 #' @param FCcutoff.given Log Fold change cutoff. Default=log2(1.2), 
 #' @param forceResults Set flag to force results if previously generated. Default=FALSE
 #' @param EPIC Boolean to indicate EPIC probes, avoid generating huge xlsx file. Default=FALSE
+#' @param paired_variable Use this variable as a paired variable for the differential analysis
 #' @export
 get_limma_results <- function(normData, df_treatment_Ind, design.given, contrasts.matrix.given, 
                               coef.given.list, OUTPUT_Data_sample,
                               comp_name,  pCutoff.given=0.05, 
-                              FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE, paired_variable=NULL) {
+                              FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE, paired_variable=NULL, covariates.Data=NULL) {
   
   
   # model.matrix: 
@@ -28,16 +29,23 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
   # contrasts.fit: make all-pairwise comparisons between the gruoups
   
   corfit <- ""
-  if (is.null(paired_variable)) {
-    fit_1 <- limma::lmFit(normData, design.given)
+  
+  if (!is.null(covariates.Data)) {
+    print("Using covariates data to fit the analysis...")
+    fit_1 <- limma::lmFit(normData, design.given, covariates = covariates.Data)
     
   } else {
-    
-    ## estimate correlation between variables on the same subject
-    corfit <- duplicateCorrelation(normData, design.given, block=paired_variable)
-    fit_1 <- limma::lmFit(normData, design.given, block = paired_variable, correlation = corfit$consensus)  
+    if (is.null(paired_variable)) {
+      fit_1 <- limma::lmFit(normData, design.given)
+      
+    } else {
+      
+      ## estimate correlation between variables on the same subject
+      corfit <- duplicateCorrelation(normData, design.given, block=paired_variable)
+      fit_1 <- limma::lmFit(normData, design.given, block = paired_variable, correlation = corfit$consensus)  
+    }  
   }
-  
+
   fit_2 <- limma::contrasts.fit(fit_1, contrasts.matrix.given)
   efit_3 <- limma::eBayes(fit_2, trend=TRUE)        # empirical Bayes adjustment
   results_fit <- decideTests(efit_3)
@@ -350,12 +358,12 @@ filter_signficant_limma <- function(dataF, sign_value = 0.05, LFC=0.26) {
 #' @param delim Character to use for delimiting: "_vs_" as default
 #'
 #' @export
-make_all_contrasts <- function (group, delim="_vs_"){
+make_all_contrasts <- function (group, delim="_vs_", decreasing = TRUE){
   
   suppressMessages(require(limma))
   
   #/ ensure that group levels are unique
-  group <- sort(unique(as.character(group)))
+  group <- sort(unique(as.character(group)), decreasing=decreasing)
   
   #/ make all combinations
   cb   <- combn(group, 2, FUN = function(x){paste0(x[1], "-", x[2])})

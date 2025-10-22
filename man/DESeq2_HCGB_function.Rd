@@ -56,6 +56,8 @@ DESeq2_HCGB_function(
 
 \item{gene.annot.df}{Dataframe containing gene annotation (Default: NULL)}
 
+\item{data_type}{Either mRNA, miRNA or rRNA_16S. Default: mRNA}
+
 \item{forceResults}{Boolean to force re-run analysis if already generated in the folder provided}
 }
 \description{

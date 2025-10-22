@@ -4,7 +4,7 @@
 \alias{make_all_contrasts}
 \title{Make all pairwise contrast for limma}
 \usage{
-make_all_contrasts(group, delim = "_vs_")
+make_all_contrasts(group, delim = "_vs_", decreasing = TRUE)
 }
 \arguments{
 \item{group}{Vector of names to use}

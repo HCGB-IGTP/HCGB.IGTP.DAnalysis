@@ -47,6 +47,8 @@ get_Results_DDS(
 
 \item{gene.annot}{Dataframe containing gene annotation (Default: NULL)}
 
+\item{data_type}{Either mRNA, miRNA or rRNA_16S. Default: mRNA}
+
 \item{shrinkage.given}{LFC shrinkage estimator provided. Available: apeglm, ashr or normal}
 }
 \description{

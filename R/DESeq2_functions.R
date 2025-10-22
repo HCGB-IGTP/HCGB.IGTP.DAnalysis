@@ -42,8 +42,8 @@ plot_DESeq2_pvalues <- function(pdf_name, res, res_filtered) {
 #' @param gene.annot.df Dataframe containing gene annotation (Default: NULL)
 #' @param min_cutoff_to_plot Minimun number of genes significant to continue analysis. Default=3
 #' @param max_cutoff_to_plot Number of genes significant to plot as candidates analysis. Default=50
+#' @param data_type Either mRNA, miRNA or rRNA_16S. Default: mRNA
 #' @export
-
 DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                                 numerator="example1", denominator="example2", 
                                 OUTPUT_Data_dir, df_treatment_Ind, list_of_cols, threads=2, 
@@ -145,7 +145,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
               sep="\t", quote=T, row.names = F)
   
   ##get significant data only with counts in all samples
-  sign.data <- filter_signficant_DESEQ(alldata, sign_value = sign_value.given, LFC = LFC.given)
+  sign.data <- filter_signficant_hits(alldata, sign_value = sign_value.given, LFC = LFC.given)
   row.names(sign.data) <- sign.data$Gene
   
   # Results table in the same order than counting table
@@ -239,6 +239,10 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       } else if (data_type=="miRNA") {
         
         list_cols <- c("parent", "ID", "Gene", "variant", "len_isomiR")
+      
+      } else if (data_type=="rRNA_16S") {
+        
+        list_cols <- c("Gene","Phylum", "Class", "Order", "Family", "Genus")
         
       } else {
         
@@ -258,7 +262,10 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
                      "log2FoldChange", "lfcSE", "pvalue", "padj")
       
     }
-    
+
+    print("alldata2")
+    print(head(alldata2))
+    print(colnames(alldata2))
     
     alldata2 <- alldata2[,c(list_cols, Samplslist$numerator, Samplslist$denominator)]
     
@@ -511,82 +518,94 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
   boxplot_DE <- file.path(OUTPUT_Data_sample, "boxplot_DE")
   dir.create(boxplot_DE)
   
-  df_treatment_Ind
+  DE_plots.df <- create_DE_plots(outdir_path = boxplot_DE, 
+                  metadata_given = df_treatment_Ind, list_of_cols = list_of_cols, 
+                  sign.data = sign.data, 
+                  comp_name = comp_name, numerator = numerator, denominator = denominator, 
+                  gene.annot.df = gene.annot.df, max_cutoff_to_plot = max_cutoff_to_plot, data_type = data_type, 
+                  n_cores = threads)
+
+  ## save for better access
+  write.csv(DE_plots.df, file=file.path(OUTPUT_Data_sample, "data4plot_sign_genes.csv"))
   
-  DE_plots.df <- data.frame(row.names = rownames(df_treatment_Ind), 
-                            df_treatment_Ind[,list_of_cols],
-                            t(sign.data[,rownames(df_treatment_Ind)]))
-  print(DE_plots.df)
-  DE_plots = list()
-  
-  ## print only top50
-  for (gene_given in head(rownames(sign.data), n=max_cutoff_to_plot)) {
-    
-    ## 
-    g <- gsub("-", "\\.", gene_given)
-    g <- gsub("&", "\\.", g)
-    g <- gsub(":", "\\.", g)
-    g <- gsub("\\+", "\\.", g)
-    
-    ##
-    print(g)
-    if (!is.null(gene.annot.df)) {
-      gene_annot.df <- gene.annot.df[gene_given,]
-      if (data_type=="mRNA") {
-        gene_name_file = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
-        gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
-        
-      } else if (data_type=="miRNA") {
-        gene_name = paste0(gene_annot.df$parent, "_", gene_annot.df$variant, "_", gene_given)
-        gene_name_file = paste0(gene_annot.df$parent, "_", gene_given)
-      }
-      print(gene_name_file)
-    } else {
-      gene_name = g
-      gene_name_file = g
-    }
-      
-    pdf(file.path(boxplot_DE, paste0(gene_name_file, ".pdf")), paper = "A4r", width = 35, height = 12)
-    DE_plots[[ gene_name_file ]] = list()
-    for (i in colnames(df_treatment_Ind[,list_of_cols])) {
-       
-       g <- gsub("-", "\\.", g)
-       print(paste0("Variable: ", i))
-       
-       if (is.numeric(df_treatment_Ind[,i])) {
-         print(paste0("Numeric: ", i))
-         p2.tmp <- ggscatter_plotRegression(data_all_given = DE_plots.df, 
-                                        x.given = g, y.given = i, 
-                                        title_string = i) 
-         
-         p2 <- p2.tmp$plot + ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
-         
-       } else {
-         p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g)
-         
-         ## Only for the varialble of interest add padj calculated by DESeq2
-         if (i == comp_name) {
-           ## get padj from DESeq2
-           stat.test <- tibble::tribble(
-             ~group1, ~group2,   ~p.adj,
-             numerator,     denominator, sign.data[gene_given,'padj']
-           )
-           
-           p2 <- p2 + stat_pvalue_manual(
-             stat.test, 
-             y.position = max(p2$data[,g])*0.85, step.increase = 1, color = "blue",
-             label = "p.adj"
-           )  
-         }
-         p2 <- p2 + ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
-       }
-       
-       print(p2)
-       DE_plots[[gene_name_file]][[i]] = p2
-     }
-    dev.off()
-  }
-  #--------------------------
+  # DE_plots.df <- data.frame(row.names = rownames(df_treatment_Ind), 
+  #                           df_treatment_Ind[,list_of_cols],
+  #                           t(sign.data[,rownames(df_treatment_Ind)]), check.names = FALSE)
+  # print(DE_plots.df)
+  # 
+  # ## print only top50
+  # for (gene_given in head(rownames(sign.data), n=max_cutoff_to_plot)) {
+  #   
+  #   ## 
+  #   g <- gsub("-", "\\.", gene_given)
+  #   g <- gsub("&", "\\.", g)
+  #   g <- gsub(":", "\\.", g)
+  #   g <- gsub("\\+", "\\.", g)
+  #   
+  #   ##
+  #   print(g)
+  #   if (!is.null(gene.annot.df)) {
+  #     gene_annot.df <- gene.annot.df[gene_given,]
+  #     if (data_type=="mRNA") {
+  #       gene_name_file = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
+  #       gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
+  #       
+  #     } else if (data_type=="miRNA") {
+  #       gene_name = paste0(gene_annot.df$parent, "_", gene_annot.df$variant, "_", gene_given)
+  #       gene_name_file = paste0(gene_annot.df$parent, "_", gene_given)
+  #     
+  #     } else if (data_type=="rRNA_16S") {
+  #       gene_name = paste0(gene_annot.df$Phylum, "_", 
+  #                          gene_annot.df$Genus, "_", gene_given)
+  #       gene_name_file = paste0(gene_annot.df$Genus, 
+  #                               "_", gene_given)
+  #     }
+  #     print(gene_name_file)
+  #   } else {
+  #     gene_name = g
+  #     gene_name_file = g
+  #   }
+  #     
+  #   pdf(file.path(boxplot_DE, paste0(gene_name_file, ".pdf")), paper = "A4r", width = 35, height = 12)
+  # 
+  #   for (i in colnames(df_treatment_Ind[,list_of_cols])) {
+  #      
+  #      g <- gsub("-", "\\.", g)
+  #      print(paste0("Variable: ", i))
+  #      
+  #      if (is.numeric(df_treatment_Ind[,i])) {
+  #        print(paste0("Numeric: ", i))
+  #        p2.tmp <- ggscatter_plotRegression(data_all_given = DE_plots.df, 
+  #                                       x.given = g, y.given = i, 
+  #                                       title_string = i) 
+  #        
+  #        p2 <- p2.tmp$plot + ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
+  #        
+  #      } else {
+  #        p2 <- ggboxplot_scatter(data_all_given = DE_plots.df, colName = i, y.coord = g)
+  #        
+  #        ## Only for the varialble of interest add padj calculated by DESeq2
+  #        if (i == comp_name) {
+  #          ## get padj from DESeq2
+  #          stat.test <- tibble::tribble(
+  #            ~group1, ~group2,   ~p.adj,
+  #            numerator,     denominator, sign.data[gene_given,'padj']
+  #          )
+  #          
+  #          p2 <- p2 + stat_pvalue_manual(
+  #            stat.test, 
+  #            y.position = max(p2$data[,g])*0.85, step.increase = 1, color = "blue",
+  #            label = "p.adj"
+  #          )  
+  #        }
+  #        p2 <- p2 + ggtitle(paste0("Variable: ", i ), subtitle = gene_name) 
+  #      }
+  #      
+  #      print(p2)
+  #    }
+  #   dev.off()
+  # }
+  # #--------------------------
   
   ######################################################################
   print ("Finish here for: ")
@@ -611,14 +630,11 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "sign.genes"=sign.data$Gene,
     "sign.count"=length(sign.data$Gene),
     "shrinkage.LFC"=shrinkage,
-    "DE_plots.df" = DE_plots.df,
-    "DE_plots" = DE_plots
+    "DE_plots.df" = DE_plots.df
   )
   
   ## dump in disk RData
   save(data2save, file=file.path(OUTPUT_Data_sample, "data2return.RData"))
-  ## save for better access
-  write.csv(DE_plots.df, file=file.path(OUTPUT_Data_sample, "data4plot_sign_genes.csv"))
   
   data2return <- list(
     "alldata2" = alldata2,
@@ -629,88 +645,10 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
     "sign.genes"=sign.data$Gene,
     "sign.count"=length(sign.data$Gene),
     "shrinkage.LFC"=shrinkage,
-    "DE_plots.df"=DE_plots.df,
-    "DE_plots" = DE_plots
+    "DE_plots.df"=DE_plots.df
   )
   ######################################################################
   return(data2return)  
-  
-}
-
-
-#' Plot batch effect
-#'
-#' This functions plots original PCA and batch corrected given two variables and a putative batch variable
-#' @param var1 DESeq2 object
-#' @param var2 DESeq2 object
-#' @param dds_object DESeq2 object
-#' @param dirName Folder path to store results
-#' @param batch_var Putative batch variable
-#' @export
-plot_batch_effect <- function(var1, var2, dds_object, dirName, batch_var) {
-  ## remove batch effect?
-  ## http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
-  ## Why after VST are there still batches in the PCA plot?
-  
-  ## Mickael Love:
-  ## DESeq() only takes as input the original counts, and this is on purpose. 
-  ## This is the optimal statistical approach. To account for batch, you put 
-  ## the variables at the beginning of the design, e.g. ~batch + condition 
-  
-  ## plot batch effect
-  vsd_Test <- varianceStabilizingTransformation(dds_object, blind = FALSE)
-  vsd_Test1 <- vsd_Test
-  
-  mat_Test <- assay(vsd_Test)
-  mat_Test <- limma::removeBatchEffect(mat_Test, vsd_Test[[batch_var]])
-  assay(vsd_Test) <- mat_Test
-  
-  p1 <- plotPCA(vsd_Test1, intgroup=var1)
-  p2 <- plotPCA(vsd_Test, intgroup=var1)
-  p3 <- plotPCA(vsd_Test1, intgroup=var2)
-  p4 <- plotPCA(vsd_Test, intgroup=var2)
-  
-  pdf(paste0(dirName, "BatchEffect.pdf"))
-  par(mfrow=c(1,2))
-  print(p1)
-  print(p2)
-  print(p3)
-  print(p4)
-  dev.off()
-  ##
-}
-
-#' Adjust sample names
-#'
-#' Adjust samples between sample sheet and files for DESeq2
-#' @param counts Expression counts. Samples as columns
-#' @param target Phenotypic information. Samples as rows
-#' @export
-adjust_samples <- function(counts, target){
-  
-  ## adjust samples in data and in sample sheet
-  counts <- counts[, sort(colnames(counts)) ]
-  counts <- counts[, colnames(counts) %in% rownames(target) ]
-  
-  print ("** Samples in counts:")
-  print (colnames(counts))
-  print ("** Samples in target:")
-  print (rownames(target))
-  
-  print ("** Adjusting...")
-  ##
-  logical_vec <- rownames(target) %in% colnames(counts)
-  target <- target[logical_vec,]
-  counts <- counts[, rownames(target) ]
-  
-  print ("** Match:")
-  print (match(rownames(target), colnames(counts)))
-  print (rownames(target) == colnames(counts))
-  
-  list2return <- list("counts" = counts, 
-                      "target" = target)
-  
-  return(list2return)
   
 }
 
@@ -764,53 +702,6 @@ plot_gene_values <- function(gene, tableCounts, targetsFile, condition, out_fold
   return(p)
 }
 
-#' Get names provided in comparison
-#' 
-#' When running DESeq2 you usually get names from resultsNames() such as var_comp1_vs_comp2 e.g. Sex_male_vs_female. This functions returns the name of the variables and the comparison studied.
-#' @param str_given A string with the comparison. E.g. Sex_male_vs_female
-#' @export
-get_comparison_resultsNames <- function(str_given) {
-  list_produced <- unlist(strsplit(str_given, split="_")) 
-  
-  str2return <- list(
-    "category" = NULL,
-    "cmp1" = NULL,
-    "cmp2" = NULL
-  )
-  
-  if ("vs" %in% list_produced) {
-    if (list_produced[3] == "vs") {
-      # category comp1 vs comp2
-      str2return$category = list_produced[1]
-      str2return$cmp1 = list_produced[2]
-      str2return$cmp2 = list_produced[4]
-    } else {
-      vs_index <- as.numeric(match("vs", list_produced))
-      len_given <- length(list_produced[vs_index:length(list_produced)])
-      if (len_given == 2) {
-        str2return$category = paste0(list_produced[1], "_", list_produced[2])
-        str2return$cmp1 = list_produced[3]
-        str2return$cmp2 = list_produced[5]
-      } else if (len_given == 3) {
-        str2return$category = list_produced[1]
-        str2return$cmp1 = paste0(list_produced[2], "_", list_produced[3])
-        str2return$cmp2 = paste0(list_produced[5], "_", list_produced[6])
-      }
-    }
-  } else {
-    print("Interaction term selected:")
-    print(str_given)
-    
-    str2return$category = "interaction"
-    str2return$cmp1 = str_given
-    str2return$cmp2 = "reference"
-    
-  }
-  
-  return(str2return)
-}
-
-
 #' Relevel and rung DESEQ2 analysis
 #' 
 #' When running DESeq2 you sometimes require to relevel some comparisons
@@ -825,11 +716,13 @@ get_comparison_resultsNames <- function(str_given) {
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
 #' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
+#' @param data_type Either mRNA, miRNA or rRNA_16S. Default: mRNA
 #' @export
 relevel_function <- function(dds_object, category, reference, 
                              given_dir, dfAnnotation, list_of_cols, 
                              data_type="mRNA", gene.annot.df.given=NULL,
                              int_threads=2, sign_value.given = 0.05, LFC.given = log2(1.2), 
+                             min_cutoff_to_plot=3, max_cutoff_to_plot=50,
                              comp_ID.given="comp1", forceResults=FALSE, localFit=FALSE, shrinkage.given='apeglm'){
   ## relevel
   dds_object[[category]] <- relevel(dds_object[[category]], ref=reference)
@@ -863,6 +756,7 @@ relevel_function <- function(dds_object, category, reference,
         OUTPUT_Data_dir = given_dir, df_treatment_Ind = dfAnnotation, list_of_cols = list_of_cols,
         sign_value.given = sign_value.given, LFC.given = LFC.given,
         threads = as.numeric(int_threads), 
+        min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
         gene.annot.df = gene.annot.df.given, data_type = data_type,
         forceResults = forceResults, shrinkage = shrinkage.given)
       
@@ -880,22 +774,6 @@ relevel_function <- function(dds_object, category, reference,
   )
   
   return(data2return)
-}
-
-#' Filter significant hits from DESEQ2 analysis
-#' 
-#' When running DESeq2 you usually required significant hits.
-#' @param dataF Dataframe with either normalized values and DESEQ2 values or only DESEQ2.
-#' @param sign_value Pvalue adjusted cutoff: Default=0.05
-#' @param LFC Log Fold Change cutoff: Default: 0.26
-#' @export
-filter_signficant_DESEQ <- function(dataF, sign_value = 0.05, LFC=0.26) {
-  
-  #log2FoldChange
-  #padj
-  dataFilt <- subset(dataF, abs(log2FoldChange)>LFC & padj<sign_value)
-  dataFilt <- dataFilt[order(dataFilt$padj),]
-  return(dataFilt)
 }
 
 #' Get results from DESeq2 and normalized data
@@ -930,12 +808,14 @@ get_all_data_DESeq2 <- function(dds_obj, coef_n, type="DESeq2") {
 #' @param dfAnnotation.given Dataframe with useful metadata to include
 #' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
 #' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
+#' @param data_type Either mRNA, miRNA or rRNA_16S. Default: mRNA
 #' @export
 check_reduced_LRT <- function(dds_obj.given, formula_given, 
                               comp.folder.given, compID.given, 
                               dfAnnotation.given,  list_of_cols, int_threads=2, 
                               sign_value.given=0.05, LFC.given = log2(1.2),
-                              gene.annot=NULL, forceResults=FALSE, shrinkage.given="apeglm") {
+                              min_cutoff_to_plot = 3, max_cutoff_to_plot = 50,
+                              gene.annot=NULL, forceResults=FALSE, shrinkage.given="apeglm", data_type="mRNA") {
   
   ## LRT: Check reduction
   DEseq.red <- DESeq2::DESeq(object = dds_obj.given, test="LRT", 
@@ -952,12 +832,14 @@ check_reduced_LRT <- function(dds_obj.given, formula_given,
   DEseq.red.res <- get_Results_DDS(dds_object = DEseq.red, 
                                    OUTPUT_Data_dir_given = comp.folder.given, 
                                    comp_ID = compID.given,
-                                   dfAnnotation = dfAnnotation.given, list_of_cols = list_of_cols,
+                                   dfAnnotation = dfAnnotation.given, 
+                                   list_of_cols = list_of_cols,
                                    int_threads = int_threads, 
-                                   forceResults=forceResults,   
+                                   min_cutoff_to_plot = min_cutoff_to_plot, max_cutoff_to_plot = max_cutoff_to_plot,
+                                   forceResults=forceResults,    
                                    sign_value.given = sign_value.given, 
                                    LFC.given = LFC.given, 
-                                   gene.annot=gene.annot, shrinkage.given=shrinkage.given)
+                                   gene.annot=gene.annot, shrinkage.given=shrinkage.given, data_type = data_type)
   
   return(DEseq.red.res)
 }
@@ -1117,7 +999,6 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 
 #' DESEQ2 analysis pipeline
 #' 
-#' When running DESeq2 you usually add multiple terms to the matrix design. Test the effect of them
 #' @param sample_sheet_given Samplesheet containing metadata information
 #' @param count_table Dataframe/matrix of counts
 #' @param OUTPUT_Data_dir_given Absolute path to store results
@@ -1135,6 +1016,8 @@ check_terms_matrix <- function(sampleSheet.given, countsGiven, list.terms, red.f
 #' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @param min_cutoff_to_plot Minimun number of genes significant to continue analysis. Default=3
 #' @param max_cutoff_to_plot Number of genes significant to plot as candidates analysis. Default=50
+#' @param list_of_cols List of columns of interest to subset from metadata
+#' @param data_type Either mRNA, miRNA or rRNA_16S. Default: mRNA
 #' @export
 analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_given, 
                            list_of_cols, formula_given, int_threads=2,
@@ -1248,7 +1131,8 @@ analysis_DESeq <- function(OUTPUT_Data_dir_given, count_table, sample_sheet_give
                                  sign_value.given = sign_value.given, LFC.given = LFC.given, 
                                  min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
                                  gene.annot=gene.annot, data_type = data_type,
-                                 int_threads = int_threads, coef_n = coef_n, forceResults=forceResults, shrinkage.given=shrinkage.given)
+                                 int_threads = int_threads, coef_n = coef_n, 
+                                 forceResults=forceResults, shrinkage.given=shrinkage.given)
   #############
   
   #############
@@ -1395,7 +1279,7 @@ exploratory_plots <- function(dds_object.exp, OUTPUT_dir, dfAnnotation_df, list_
 #' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
 #' @param min_cutoff_to_plot Minimun number of genes significant to continue analysis. Default=3
 #' @param max_cutoff_to_plot Number of genes significant to plot as candidates analysis. Default=50
-
+#' @param data_type Either mRNA, miRNA or rRNA_16S. Default: mRNA
 #' @export
 get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, list_of_cols, comp_ID,
                             sign_value.given = 0.05, LFC.given = log2(1.2),
@@ -1456,155 +1340,143 @@ get_Results_DDS <- function(dds_object, OUTPUT_Data_dir_given, dfAnnotation, lis
 }
 
 
-#' Check the rank of a design matrix
-#' 
-#' When running DESeq2 you need a design matrix, check the rank of it first
-#' @param formula2test String with formula to check
-#' @param data.df Sample sheet dataframe
+
+#' Create a loop to call DESeq2
+#'
+#' @param physeq.obj Phyloseq object to use
+#' @param tax_levels Taxonomic levels to use. Default: c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+#' @param dfAnnotation.given Samplesheet containing metadata information
+#' @param count_table.given Dataframe/matrix of counts
+#' @param OUTPUT_Data_dir_given Absolute path to store results
+#' @param int_threads Number of threads to use
+#' @param formula_given Design formula to use
+#' @param coef_n Number of the coefficient of results to test (if desired)
+#' @param early_return Whether to return exploratory results early or not
+#' @param comp_ID Tag name to include for each comparison
+#' @param cutoff.given add an option to include cutoff when removing Zeros
+#' @param sign_value.given Adjusted pvalue cutoff. Default=0.05, 
+#' @param LFC.given Log Fold change cutoff. Default=log2(1.2), 
+#' @param localFit Use a fitType=local for mean dispersion fit in DESeq2
+#' @param forceResults Boolean to force re-run analysis if already generated in the folder provided
+#' @param gene_annot.given Dataframe containing gene annotation (Default: NULL)
+#' @param shrinkage.given LFC shrinkage estimator provided. Available: apeglm, ashr or normal
+#' @param min_cutoff_to_plot Minimun number of genes significant to continue analysis. Default=3
+#' @param max_cutoff_to_plot Number of genes significant to plot as candidates analysis. Default=50
+#' @param list_of_cols.given List of columns of interest to subset from metadata
+#' @param data_type Either mRNA, miRNA or rRNA_16S. Default: mRNA
 #' @export
-check_rank_design <- function(formula2test, data.df) {
-  m <- model.matrix(as.formula(formula2test), data=data.df)
+analysis_DEseq.looper <- function(OUTPUT_Data_dir_given, dfAnnotation.given, 
+                                  list_of_cols.given, list_of_cmps.given, data_type="mRNA",
+                                  int_threads=2, sign_value.given = 0.05,
+                                  LFC.given = log2(1.2), early_return=FALSE, comp_ID=NULL, 
+                                  localFit=FALSE, forceResults=FALSE, min_cutoff_to_plot=3, max_cutoff_to_plot=50,
+                                  shrinkage.given="apeglm", count_table.given=NULL, physeq.obj=NULL, tax_levels=NULL,
+                                  gene_annot.given=NULL) {
   
-  print("colnames(m)")
-  print(colnames(m))
   
-  print("Check if colSums or rowSums == 0")
+  dir.create(OUTPUT_Data_dir_given, showWarnings = FALSE)
   
-  print("## check rows: samples")
-  row.res <- apply(m, 1, function(x) all(x==0)) ## check rows: samples
-  print(table(row.res))
-  print("")
-  print(row.res)
-  print("")
-  print(which(row.res))
-  print("which(row.res)")
-  
-  print("")
-  print("## check columns: categories")
-  col.res <- apply(m, 2, function(x) all(x==0)) ## check columns: categories
-  
-  print("table(col.res)")
-  print(table(col.res))
-  print("")
-  print(col.res)
-  print("")
-  print("which(col.res)")
-  print(which(col.res))
+  list_res <- list()
+  for (cmp in names(list_of_cmps.given)) {
+    
+    print ("Working for comparison: ")
+    print(cmp)
+    print(list_of_cmps.given[cmp])
+    print("Formula: ")
+    print(as.character(list_of_cmps.given[[cmp]]['formula']))
+    
+    dir.cmp <- file.path(OUTPUT_Data_dir_given, cmp)
+    dir.create(dir.cmp)
+    print(dir.cmp)
+    
+    ## Create analysis
+    if (data_type %in% c("miRNA", "mRNA")) {
+      if (is.null(count_table.given)) {
+        print("ERROR: Provide a valid count table")
+        return()
+      }
+      
+      res <- analysis_DESeq(OUTPUT_Data_dir_given = dir.cmp, count_table = count_table.given,
+                            sample_sheet_given = dfAnnotation.given, 
+                            formula_given = as.character(list_of_cmps.given[[cmp]]['formula']),
+                            int_threads = int_threads, list_of_cols = list_of_cols.given,
+                            gene.annot = gene_annot.given,
+                            sign_value.given = sign_value.given, LFC.given = LFC.given, 
+                            early_return = early_return, localFit = localFit, 
+                            forceResults = forceResults, min_cutoff_to_plot = min_cutoff_to_plot, 
+                            max_cutoff_to_plot = max_cutoff_to_plot, data_type = data_type, 
+                            shrinkage.given = shrinkage.given,
+                            comp_ID = cmp)
+      
+    } else if (data_type == "rRNA_16S") {
+      
+      if (is.null(physeq.obj)) {
+        print("ERROR: Provide a valid phyloseq object")
+        return()
+      }
+      
+      if (!is.null(gene_annot.given)) {
+        
+        ## 
+        print("Remove some characters that might create errors in the taxonomy table...")
+        
+        ## remove some characters that might create errors
+        ## Not only in genes, in all other columns
+        #gene.annot$Genus <- gene.annot$Genus %>% stringr::str_replace("/", "_")
+        gene_annot.given <- gene_annot.given %>% dplyr::mutate(across(tax_levels, stringr::str_remove_all, "/"))
+        print(head(gene_annot.given))
+        print("...")
+      }
+      
+      res <- analysis_DESeq_phyloseq(OUTPUT_Data_dir_given = dir.cmp, physeq.obj = physeq.obj, 
+                                     sample_sheet_given= dfAnnotation.given, 
+                                     list_of_cols = list_of_cols.given, 
+                                     formula_given = as.character(list_of_cmps.given[[cmp]]['formula']), 
+                                     int_threads=int_threads, sign_value.given = sign_value.given, LFC.given = LFC.given,
+                                     early_return=early_return, comp_ID=cmp, 
+                                     localFit=localFit, forceResults=forceResults, 
+                                     min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
+                                     gene.annot=gene_annot.given, data_type = "rRNA_16S", shrinkage.given=shrinkage.given,
+                                     tax_levels = tax_levels)
+    }
+    
+    
+    ## relevel if necessary 
+    if (length(list_of_cmps.given[[cmp]]['relevel'])>0) {
+      print("Relevel using: ")
+      
+      if (list_of_cmps.given[[cmp]]['relevel'] == "None") {
+        
+      } else {
+        for (i in list_of_cmps.given[[cmp]][['relevel']]) {
+          print("Previous reference: ")
+          list_levels <- levels(factor(dfAnnotation.given[[i]]))
+          print(list_levels[1])
+          
+          for (j in 2:length(list_levels)) {
+            res_relevel <- relevel_function(dds_object = res$dds_obj,
+                                            category = i, reference = list_levels[j],
+                                            dfAnnotation = dfAnnotation.given,
+                                            list_of_cols = list_of_cols.given, given_dir = dir.cmp, 
+                                            gene.annot.df.given = gene_annot.given,
+                                            int_threads = int_threads, data_type = data_type, 
+                                            sign_value.given = sign_value.given, LFC.given = LFC.given, 
+                                            min_cutoff_to_plot=min_cutoff_to_plot, max_cutoff_to_plot=max_cutoff_to_plot,
+                                            localFit = localFit, forceResults = forceResults, 
+                                            shrinkage.given = shrinkage.given, comp_ID.given = cmp)
+            
+            list_res[[paste0(cmp, "_rel_", list_levels[j])]] <- file.path(dir.cmp,"data2return.Rdata")
+            
+          }
+        }
+      }
+    }
+    
+    ## remove from memory
+    res <- NULL
+  }
 }
 
-#' Create DE gene plots for several metadata variables
-#'
-#' @param outdir_path Output dirname
-#' @param metadata_given Samplesheet dataframe
-#' @param list_of_cols Columns to use for plotting genes
-#' @param sign.data Signficant dataframe to use
-#' @param comp_name Comparison of interest
-#' @param numerator Group 1, used as numerator
-#' @param denominator Group 2, used as denominator or reference in the comparison
-#' @param gene.annot.df Dataframe with annotation, either for miRNA or mRNA containing parent and variant or hgnc_symbol, respectively. Default: NULL
-#' @param max_cutoff_to_plot Maximun number of genes to plot. Default: 50
-#' @param data_type Either mRNA or miRNA. Default: mRNA
-#' @param outdir_name Name of the folder to create. Default: boxplot_DE
-#'
-#' @export
-create_DE_plots <- function(outdir_path, metadata_given, list_of_cols, sign.data, 
-                            comp_name, numerator, denominator,
-                            gene.annot.df=NULL, max_cutoff_to_plot=50, data_type="mRNA", outdir_name="boxplot_DE", n_cores=2) {
-  
-  print("+ Create dir")
-  boxplot_DE <- file.path(outdir_path, outdir_name)
-  dir.create(boxplot_DE)
-  print(boxplot_DE)
-  
-  ## create dataframe to plot
-  print("+ Create dataframe to plot")
-  
-  samples_here <- rownames(metadata_given)[rownames(metadata_given) %in% colnames(sign.data)]
-  
-  DE_plots.df <- data.frame(row.names = samples_here, 
-                            metadata_given[samples_here, list_of_cols], t(sign.data[, samples_here]))
-  print(head(DE_plots.df))
-  
-  ##
-  print("+ Iterate for each gene and create plots")
-  DE_plots = list()
-  
-  library(doParallel)
-  # Register cluster
-  cluster <- makeCluster(n_cores)
-  registerDoParallel(cluster)
-  
-  results <- foreach(gene_n = 1:max_cutoff_to_plot) %dopar% {
-    gene_given = rownames(sign.data)[gene_n]
-    g <- gsub("-", "\\.", gene_given)
-    g <- gsub("&", "\\.", g)
-    g <- gsub(":", "\\.", g)
-    g <- gsub("\\+", "\\.", g)
-    print(g)
-    
-    ## If annotation provided, add description and subtitle
-    if (!is.null(gene.annot.df)) {
-      gene_annot.df <- gene.annot.df[gene_given, ]
-      if (data_type == "mRNA") {
-        gene_name_file = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
-        gene_name = paste0(gene_given, "_", gene_annot.df$hgnc_symbol)
-      }
-      else if (data_type == "miRNA") {
-        gene_name = paste0(gene_annot.df$parent, "_", 
-                           gene_annot.df$variant, "_", gene_given)
-        gene_name_file = paste0(gene_annot.df$parent, 
-                                "_", gene_given)
-      }
-      ##
-      print(paste0("Annotation added: ", gene_name_file))
-    }
-    else {
-      gene_name = g
-      gene_name_file = g
-    }
-    
-    DE_plots[[gene_name_file]] = list()
-    for (i in colnames(metadata_given[, list_of_cols])) {
-      g <- gsub("-", "\\.", g)
-      print(paste0("Variable: ", i))
-      if (is.numeric(metadata_given[, i])) {
-        print(paste0("Numeric: ", i))
-        p2.tmp <- HCGB.IGTP.DAnalysis::ggscatter_plotRegression(data_all_given = DE_plots.df, 
-                                                                x.given = g, y.given = i, title_string = i)
-        p2 <- p2.tmp$plot + ggtitle(paste0("Variable: ", i), subtitle = gene_name)
-      }
-      else {
-        p2 <- HCGB.IGTP.DAnalysis::ggboxplot_scatter(data_all_given = DE_plots.df, 
-                                                     colName = i, y.coord = g)
-        if (i == comp_name) {
-          ## If the plot is for the comparison of interest, 
-          ## add in blue the pvalue adjusted obtained by DESeq2
-          stat.test <- tibble::tribble(~group1, ~group2, 
-                                       ~p.adj, numerator, denominator,
-                                       sign.data[gene_given, "padj"])
-          p2 <- p2 + stat_pvalue_manual(stat.test, 
-                                        y.position = max(p2$data[,g]) * 0.85, 
-                                        step.increase = 1, color = "blue", 
-                                        label = "p.adj")
-          
-          p2 <- p2 + labs(title = paste0("Variable: ", i),
-                          subtitle = gene_name,
-                          caption = "[**In blue, pvalue adjusted by DESeq2]")
-          
-        } else {
-          p2 <- p2 + ggtitle(paste0("Variable: ", i), subtitle = gene_name)  
-        }
-        
-      }
-      print(p2)
-      DE_plots[[gene_name_file]][[i]] = p2
-    }
-    
-    HCGB.IGTP.DAnalysis::save_multi_pdf(folder_path = boxplot_DE, name_file = gene_name_file, list_plots = DE_plots[[gene_name_file]])
-  }
-  
-  # Don't fotget to stop the cluster
-  stopCluster(cl = cluster)
-}
+
 
 

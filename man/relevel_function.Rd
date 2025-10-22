@@ -16,6 +16,8 @@ relevel_function(
   int_threads = 2,
   sign_value.given = 0.05,
   LFC.given = log2(1.2),
+  min_cutoff_to_plot = 3,
+  max_cutoff_to_plot = 50,
   comp_ID.given = "comp1",
   forceResults = FALSE,
   localFit = FALSE,
@@ -32,6 +34,8 @@ relevel_function(
 \item{given_dir}{Output dir to use}
 
 \item{dfAnnotation}{Dataframe containing additional information for each sample}
+
+\item{data_type}{Either mRNA, miRNA or rRNA_16S. Default: mRNA}
 
 \item{int_threads}{Number of CPUs to use (Default: 2)}
 
