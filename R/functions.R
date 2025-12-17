@@ -217,3 +217,14 @@ get_possible_comparisons <- function(vec.given) {
   my_comp
 }
 
+
+#' First letter uppercase
+#'
+#' @param x String to convert first letter into uppercase
+#'
+#' @export
+firstup <- function(x) {
+  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+  x
+}
+

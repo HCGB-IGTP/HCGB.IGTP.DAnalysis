@@ -20,6 +20,8 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
                               FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE, paired_variable=NULL, covariates.Data=NULL) {
   
   
+  dir.create(OUTPUT_Data_sample, showWarnings = FALSE)
+  
   # model.matrix: 
   # makeContrasts: make all-pairwise comparisons between the gruoups
   
@@ -48,7 +50,7 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
 
   fit_2 <- limma::contrasts.fit(fit_1, contrasts.matrix.given)
   efit_3 <- limma::eBayes(fit_2, trend=TRUE)        # empirical Bayes adjustment
-  results_fit <- decideTests(efit_3)
+  #results_fit <- decideTests(efit_3)
   
   results_list <- list()
   for (c in coef.given.list) {
@@ -62,9 +64,11 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
     dir.create(c.dir)
     
     results.limma <- limma_DE_function(efit_3 = efit_3, normData =  normData, 
-                                       df_treatment_Ind = df_treatment_Ind, design.given = design.given, 
+                                       df_treatment_Ind = df_treatment_Ind, 
+                                       design.given = design.given, 
                                        contrasts.matrix.given = contrasts.matrix.given, 
-                                       coef.given = c, OUTPUT_Data_sample = c.dir,
+                                       coef.given = c, 
+                                       OUTPUT_Data_sample = c.dir,
                                        comp_name = comp_name, 
                                        numerator=numerator, 
                                        denominator = denominator,
@@ -78,8 +82,6 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
   
   results2return <- list(
     "efit"=efit_3,
-    "results_fit" = results_fit,
-    #"vennDiagram" = vennDiagram(results_fit),
     "results_list" = results_list,
     "normData" = normData,
     "design" = design.given,
@@ -115,13 +117,16 @@ get_limma_results <- function(normData, df_treatment_Ind, design.given, contrast
 #' @export
 limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, contrasts.matrix.given, 
                               coef.given, OUTPUT_Data_sample,
-                              comp_name, numerator, denominator,
+                              comp_name, numerator, denominator, max_heatmap=50,
                               pCutoff.given=0.05, FCcutoff.given=log2(1.2), forceResults=FALSE, EPIC=FALSE) {
   
   library(EnhancedVolcano)
   library(RColorBrewer)
   library(pheatmap)
   library(openxlsx)
+  
+  
+  dir.create(OUTPUT_Data_sample, showWarnings = FALSE)
   
   if (forceResults) {
     
@@ -133,27 +138,7 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
       return()
     }
   }
-  
-  #--------------------------
-  ## Prepare data
-  #--------------------------
-  results_list <- list()
-  all_data.res = limma::topTable(efit_3, number = 3e6, 
-                                 adjust.method = "BH", coef = coef.given)
-  print(head(all_data.res))
-  
-  ## Merge normalized values and differential expression
-  alldata.norm.res <- merge(normData, all_data.res, by="row.names", sort=FALSE)
-  names(alldata.norm.res)[1] <- "Gene"
-  
-  # filter
-  filt.res <- filter_signficant_hits(dataF = alldata.norm.res, sign_value = pCutoff.given, LFC=FCcutoff.given, input_type = "limma")
-  names(filt.res)[1] <- "Gene"
-  rownames(filt.res) <- filt.res$Gene
-  filt.res$Gene <- NULL
-  #--------------------------
-  
-  #--------------------------
+   #--------------------------
   # Get only for this samples
   #--------------------------
   
@@ -196,6 +181,43 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
     name.cmp <- paste0(comp_name, ": ",  numerator, " vs. ", denominator)
   }
   #--------------------------
+ 
+  #--------------------------
+  ## Prepare data
+  #--------------------------
+  results_list <- list()
+  
+  results_fit <- decideTests(efit_3)
+  res_limma = limma::topTable(efit_3, number = 3e6, 
+                                 adjust.method = "BH", coef = coef.given)
+  
+  print("head(res_limma)")
+  print(head(res_limma))
+
+  all_data.res <- merge(normData[,listOfSampls], res_limma, by="row.names", sort=FALSE)
+  print("head(all_data.res)")
+  names(all_data.res)[1] <- "Gene"
+  rownames(all_data.res) <- all_data.res$Gene
+  all_data.res$Gene <- NULL
+  
+  all_data.res['baseMean_Num'] <- rowMeans(all_data.res[,Samplslist$numerator])
+  all_data.res['baseMean_Den'] <- rowMeans(all_data.res[,Samplslist$denominator])
+  print(head(all_data.res))
+  
+  ## Merge normalized values and differential expression with other samples
+  alldata.norm.res <- merge(normData, res_limma, by="row.names", sort=FALSE)
+  names(alldata.norm.res)[1] <- "Gene"
+  rownames(alldata.norm.res) <- alldata.norm.res$Gene
+  alldata.norm.res$Gene <- NULL
+  print("head(alldata.norm.res)")
+  print(head(alldata.norm.res))
+  
+  # filter
+  filt.res <- filter_significant_hits(dataF = alldata.norm.res[,c(listOfSampls, "logFC","AveExpr","t","P.Value","adj.P.Val","B")], 
+                                      sign_value = pCutoff.given, LFC=FCcutoff.given, 
+                                      input_type = "limma")
+  #--------------------------
+  
   
   #--------------------------
   # Write Results tables
@@ -258,15 +280,34 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
   #--------------------------
   if (length(rownames(filt.res))>10) {
     
+    print("Plotting Top significant DE genes with different normalization methods")
     print(head(filt.res))
+    print(dim(filt.res))
     
-    ## plot rld
-    data2heatmap = filt.res[,!colnames(filt.res) %in% c("logFC", "AveExpr", "t", "P.Value", "adj.P.Val","B")] %>% na.omit()
-    print(data2heatmap[1:50, 1:10])
+    if (length(rownames(filt.res)) < max_heatmap) {
+      max_heatmap.ids = rownames(filt.res)
+      max_heatmap <- length(max_heatmap.ids)
+    } else {
+      max_heatmap.ids = head(rownames(filt.res), n=max_heatmap)
+    }
+    
+    print(max_heatmap.ids)
+    print(length(max_heatmap.ids))
+    
+    data2heatmap = alldata.norm.res[max_heatmap.ids,]
+    rownames(data2heatmap) <- data2heatmap$Gene
+    data2heatmap$Gene <- NULL
+    data2heatmap = data2heatmap[,rownames(df_treatment_Ind)] %>% na.omit()
+    
+    print(paste0("Use top ", max_heatmap, " results for the heatmap"))
+    print(head(data2heatmap))
+    print(tail(data2heatmap))
     #print(tail(colnames(data2heatmap)))
+    print(table(is.na(data2heatmap)))
+    print(dim(data2heatmap))
     
     plot1 <- ""    
-    plot1 <- try(pheatmap(head(data2heatmap, 50), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
+    plot1 <- try(pheatmap(data2heatmap, main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
                       cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
                       annotation_col = df_treatment_Ind,
                       color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
@@ -274,7 +315,7 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
     ))
 
     HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                  name_file = paste0(file_name, "_top50_DEgenes_Heatmap_allSamples"), plot_given = plot1)
+                                  name_file = paste0(file_name, "_top_DEgenes_Heatmap_allSamples"), plot_given = plot1)
     results_list[['heatmap.all']] = plot1
     
     
@@ -284,21 +325,36 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
     } else {
       ## Only samples included in comparison
       ## plot rld
-      data2heatmap2 = data2heatmap[,c(Samplslist$numerator, Samplslist$denominator)]
+      print("Plot only for samples of comparison")
+      print("Numerator:")
+      print(Samplslist$numerator)
+      print("Denominator: ")
+      print(Samplslist$denominator)
+      
+      data2heatmap2 = data2heatmap[,listOfSampls]
+      print(data2heatmap2)
+      print(dim(data2heatmap2))
+      print(table(is.na(data2heatmap2)))
+      print(df_treatment_Ind[listOfSampls,])
+      print(dim(df_treatment_Ind[listOfSampls,]))
+      
+      data2heatmap2 <- data2heatmap2[!rowSums(data2heatmap2)==0,]
+      print(dim(data2heatmap2))
+      
+      
       plot2 <- ""
-      plot2 <- try(pheatmap(head(data2heatmap2, 50), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
+      plot2 <- try(pheatmap(mat = as.matrix(data2heatmap2), main="NormCounts Pheatmap (p.adj<0.05 and [FC]>1.2)",
                         cluster_rows=TRUE, cluster_cols=TRUE, show_rownames=TRUE, show_colnames = TRUE, legend = TRUE,
-                        annotation_col = df_treatment_Ind,
+                        annotation_col = df_treatment_Ind[c(Samplslist$numerator, Samplslist$denominator),],
                         color = rev(colorRampPalette(brewer.pal(9, "RdYlBu"))(10)), 
                         scale="row" ## centered and scale values per row
       ))
       HCGB.IGTP.DAnalysis::save_pdf(folder_path = OUTPUT_Data_sample, 
-                                    name_file = paste0(file_name, "_top50_DEgenes_Heatmap_Samples"), 
+                                    name_file = paste0(file_name, "_top_DEgenes_Heatmap_Samples"), 
                                     plot_given = plot2)
       results_list[['heatmap.only']] = plot2
       
     }
-    
   }
   #--------------------------
   
@@ -306,6 +362,7 @@ limma_DE_function <- function(efit_3, normData, df_treatment_Ind, design.given, 
   # save results in list
   #--------------------------
   results_list[['all.data']] = all_data.res
+  results_list[['results.fit']] = results_fit
   results_list[['alldata.norm.res']] = alldata.norm.res
   results_list[['sign.data']] = filt.res
   results_list[['sign.genes']] = rownames(filt.res)

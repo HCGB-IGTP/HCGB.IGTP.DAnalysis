@@ -145,7 +145,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
               sep="\t", quote=T, row.names = F)
   
   ##get significant data only with counts in all samples
-  sign.data <- filter_signficant_hits(alldata, sign_value = sign_value.given, LFC = LFC.given)
+  sign.data <- filter_significant_hits(alldata, sign_value = sign_value.given, LFC = LFC.given)
   row.names(sign.data) <- sign.data$Gene
   
   # Results table in the same order than counting table
@@ -242,7 +242,7 @@ DESeq2_HCGB_function = function(dds_object, coef_n, comp_name, comp_ID="comp1",
       
       } else if (data_type=="rRNA_16S") {
         
-        list_cols <- c("Gene","Phylum", "Class", "Order", "Family", "Genus")
+        list_cols <- c("Gene","Domain","Phylum", "Class", "Order", "Family", "Genus")
         
       } else {
         
